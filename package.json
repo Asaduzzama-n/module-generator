@@ -1,0 +1,29 @@
+{
+  "name": "express-module-generator",
+  "version": "1.0.0",
+  "description": "Generate Express modules with Mongoose models",
+  "main": "dist/index.js",
+  "bin": {
+    "create-module": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "express",
+    "mongoose",
+    "generator",
+    "module",
+    "cli"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^9.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "typescript": "^4.7.4"
+  }
+}
