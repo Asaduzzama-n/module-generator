@@ -1,11 +1,9 @@
-# Creating a README.md for Module Generator
-
-I'll create a comprehensive README.md file for your module generator tool that explains what it does, how to install it, and how to use it.
+Okay, I can help update the `README.md` file. Since you haven't specified the exact changes, I'll update the version number mentioned in the README to match the current version `1.0.4` from your `package.json`.
 
 ````markdown:d:\module-generator\README.md
-# Module Generator
+# module-generator
 
-A command-line tool for generating Express.js modules with Mongoose models, controllers, services, and routes.
+A command-line tool for generating Express.js modules with Mongoose models, controllers, services, and routes. Version: 1.0.4
 
 ## Features
 
@@ -20,13 +18,13 @@ A command-line tool for generating Express.js modules with Mongoose models, cont
 ### Global Installation
 
 ```bash
-npm install -g module-generator
+npm install -g express-module-generator@1.0.4
 ````
 
 ### Local Installation
 
 ```bash
-npm install --save-dev module-generator
+npm install --save-dev express-module-generator@1.0.4
 ```
 
 ## Configuration

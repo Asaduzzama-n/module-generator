@@ -197,7 +197,7 @@ function updateRouterFile(folderName, camelCaseName, config) {
         return;
     }
     const routeImport = `import { ${camelCaseName}Routes } from '../app/modules/${folderName}/${folderName}.route';`;
-    const routeEntry = `{ path: '/${folderName}', route: ${camelCaseName}Routes }`;
+    const routeEntry = `  { path: '/${folderName}', route: ${camelCaseName}Routes }`;
     try {
         let routerFileContent = fs_1.default.readFileSync(routerPath, "utf-8");
         // Check if the import statement is already present
@@ -211,11 +211,12 @@ function updateRouterFile(folderName, camelCaseName, config) {
             routerFileContent = `${beforeImports}${routeImport}\n${afterImports}`;
         }
         // Find the apiRoutes array
-        const apiRoutesStartRegex = /const apiRoutes[^[]*\[/;
-        const match = routerFileContent.match(apiRoutesStartRegex);
+        // Improved regex to match the array declaration and opening bracket
+        const apiRoutesRegex = /const\s+apiRoutes\s*:\s*{[^}]*}\[\]\s*=\s*\[/;
+        const match = routerFileContent.match(apiRoutesRegex);
         if (match) {
             const apiRoutesStart = match.index + match[0].length;
-            const apiRoutesEndIndex = routerFileContent.indexOf("]", apiRoutesStart);
+            const apiRoutesEndIndex = findClosingBracketIndex(routerFileContent, apiRoutesStart);
             // Check if route entry already exists
             if (!routerFileContent.includes(`path: '/${folderName}'`)) {
                 // Get the content inside the array
@@ -224,12 +225,12 @@ function updateRouterFile(folderName, camelCaseName, config) {
                     .trim();
                 // Add the new route entry
                 const newArrayContent = arrayContent
-                    ? `${arrayContent}\n  ${routeEntry}`
+                    ? `${arrayContent},\n${routeEntry}`
                     : routeEntry;
                 // Replace the array content
                 routerFileContent =
                     routerFileContent.substring(0, apiRoutesStart) +
-                        "\n  " +
+                        "\n" +
                         newArrayContent +
                         "\n" +
                         routerFileContent.substring(apiRoutesEndIndex);
@@ -239,40 +240,82 @@ function updateRouterFile(folderName, camelCaseName, config) {
             console.log(`✅ Added route for ${camelCaseName} to central router.`);
         }
         else {
-            console.error("Failed to find apiRoutes array in the router file.");
+            // Fallback approach if the regex doesn't match
+            console.log("Using fallback approach to update router file...");
+            // Look for the array closing and the forEach
+            const arrayEndRegex = /\]\s*\n\s*apiRoutes\.forEach/;
+            const endMatch = routerFileContent.match(arrayEndRegex);
+            if (endMatch) {
+                const insertPosition = endMatch.index;
+                // Check if route entry already exists
+                if (!routerFileContent.includes(`path: '/${folderName}'`)) {
+                    // Insert the new route before the array closing bracket
+                    const beforeInsert = routerFileContent.substring(0, insertPosition);
+                    const afterInsert = routerFileContent.substring(insertPosition);
+                    routerFileContent = `${beforeInsert.trimEnd()},\n${routeEntry}\n${afterInsert}`;
+                    // Write the updated content back to the file
+                    fs_1.default.writeFileSync(routerPath, routerFileContent, "utf-8");
+                    console.log(`✅ Added route for ${camelCaseName} to central router using fallback method.`);
+                }
+            }
+            else {
+                console.error("Failed to find apiRoutes array in the router file.");
+            }
         }
     }
     catch (error) {
         console.error("Error updating router file:", error);
     }
 }
+// Helper function to find the index of the closing bracket
+function findClosingBracketIndex(text, startIndex) {
+    let bracketCount = 1;
+    for (let i = startIndex; i < text.length; i++) {
+        if (text[i] === "[") {
+            bracketCount++;
+        }
+        else if (text[i] === "]") {
+            bracketCount--;
+            if (bracketCount === 0) {
+                return i;
+            }
+        }
+    }
+    return -1;
+}
 // Main CLI function
 function main() {
-    const config = loadConfig();
-    const program = new commander_1.Command();
-    program
-        .name("create-module")
-        .description("Generate Express module files with Mongoose models")
-        .version("1.0.0")
-        .argument("<name>", "Module name")
-        .option("-c, --config <path>", "Path to custom config file")
-        .option("--modules-dir <path>", "Path to modules directory")
-        .option("--routes-file <path>", "Path to routes file")
-        .allowUnknownOption(true) // Allow field definitions to be passed
-        .action((name, options) => {
-        // Override config with CLI options
-        if (options.modulesDir) {
-            config.modulesDir = options.modulesDir;
-        }
-        if (options.routesFile) {
-            config.routesFile = options.routesFile;
-        }
-        // Get field definitions from remaining arguments
-        const fieldArgs = program.args.slice(1);
-        const fields = parseFieldDefinitions(fieldArgs);
-        createModule(name, fields, config);
-    });
-    program.parse();
+    try {
+        const config = loadConfig();
+        const program = new commander_1.Command();
+        program
+            .name("create-module")
+            .description("Generate Express module files with Mongoose models")
+            .version("1.0.3")
+            .argument("<name>", "Module name")
+            .option("-c, --config <path>", "Path to custom config file")
+            .option("--modules-dir <path>", "Path to modules directory")
+            .option("--routes-file <path>", "Path to routes file")
+            .allowUnknownOption(true) // Allow field definitions to be passed
+            .action((name, options) => {
+            // Override config with CLI options
+            if (options.modulesDir) {
+                config.modulesDir = options.modulesDir;
+            }
+            if (options.routesFile) {
+                config.routesFile = options.routesFile;
+            }
+            // Get field definitions from remaining arguments
+            const fieldArgs = program.args.slice(1);
+            const fields = parseFieldDefinitions(fieldArgs);
+            createModule(name, fields, config);
+        });
+        program.parse();
+    }
+    catch (error) {
+        console.error("Error executing command:", error);
+        process.exit(1);
+    }
 }
 // Execute the CLI
 main();

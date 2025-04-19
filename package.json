@@ -1,14 +1,19 @@
 {
   "name": "express-module-generator",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "description": "Generate Express modules with Mongoose models",
   "main": "dist/index.js",
   "bin": {
     "create-module": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "postinstall": "node -e \"try { require('fs').chmodSync(require('path').join(__dirname, 'dist/index.js'), '755') } catch(e) {}\""
   },
   "keywords": [
     "express",
