@@ -516,7 +516,7 @@ function updateRouterFile(folderName, camelCaseName, config) {
     try {
         let routerContent = fs_1.default.readFileSync(routerFilePath, "utf-8");
         // Check if the import already exists
-        const importStatement = `import { ${camelCaseName}Routes } from '../app/modules/${folderName}/${folderName}.route';`;
+        const importStatement = `import { ${camelCaseName}Routes } from '../app/modules/${folderName}/${folderName}.route'`;
         if (!routerContent.includes(importStatement)) {
             // Find the last import statement
             const lastImportIndex = routerContent.lastIndexOf("import ");
@@ -534,26 +534,37 @@ function updateRouterFile(folderName, camelCaseName, config) {
                 routerContent = importStatement + "\n" + routerContent;
             }
         }
-        // Check if the route registration already exists
-        const routeRegistration = `router.use('/${folderName}', ${camelCaseName}Routes);`;
+        // Check if the route registration already exists in the apiRoutes array
+        const routeRegistration = `{ path: '/${folderName}', route: ${camelCaseName}Routes }`;
         if (!routerContent.includes(routeRegistration)) {
-            // Find the router definition
-            const routerDefIndex = routerContent.indexOf("const router");
-            if (routerDefIndex !== -1) {
-                // Find a good place to insert the route registration
-                const exportIndex = routerContent.lastIndexOf("export");
-                if (exportIndex !== -1) {
-                    // Insert before the export statement
-                    routerContent =
-                        routerContent.slice(0, exportIndex) +
-                            routeRegistration +
-                            "\n\n" +
-                            routerContent.slice(exportIndex);
+            // Find the apiRoutes array initialization (after the equals sign)
+            const apiRoutesDeclaration = routerContent.indexOf("const apiRoutes");
+            if (apiRoutesDeclaration !== -1) {
+                // Find the equals sign
+                const equalsSignIndex = routerContent.indexOf("=", apiRoutesDeclaration);
+                if (equalsSignIndex !== -1) {
+                    // Find the opening bracket of the array initialization
+                    const arrayStartIndex = routerContent.indexOf("[", equalsSignIndex);
+                    // Find the closing bracket of the array
+                    const arrayEndIndex = routerContent.indexOf("]", arrayStartIndex);
+                    if (arrayStartIndex !== -1 && arrayEndIndex !== -1) {
+                        // Check if there are existing routes
+                        const arrayContent = routerContent.substring(arrayStartIndex, arrayEndIndex);
+                        const hasRoutes = arrayContent.includes("{");
+                        // Insert the new route at the end of the array
+                        const insertPosition = arrayEndIndex;
+                        const insertText = hasRoutes
+                            ? `,\n  ${routeRegistration}`
+                            : `  ${routeRegistration}`;
+                        routerContent =
+                            routerContent.slice(0, insertPosition) +
+                                insertText +
+                                routerContent.slice(insertPosition);
+                    }
                 }
-                else {
-                    // Append at the end
-                    routerContent += "\n" + routeRegistration + "\n";
-                }
+            }
+            else {
+                console.warn("Could not find apiRoutes array in router file");
             }
         }
         // Write the updated content back to the file
