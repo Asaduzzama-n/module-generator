@@ -1,6 +1,3 @@
-I'll update the README.md file to reflect the new features and version 1.0.9.
-
-````markdown:d:\module-generator\README.md
 # module-generator
 
 A command-line tool for generating Express.js modules with Mongoose models, controllers, services, and routes. Version: 1.0.7
@@ -22,7 +19,7 @@ A command-line tool for generating Express.js modules with Mongoose models, cont
 
 ```bash
 npm install -g express-module-generator
-````
+```
 
 ### Local Installation
 
