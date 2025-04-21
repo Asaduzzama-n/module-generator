@@ -11,12 +11,19 @@ interface ModuleGeneratorConfig {
 }
 
 // Field definition interface
+// Enhanced field definition interface to support nested object properties
 interface FieldDefinition {
   name: string;
   type: string;
   ref?: string;
   isRequired?: boolean;
   isOptional?: boolean;
+  objectProperties?: {
+    name: string;
+    type: string;
+    isRequired?: boolean;
+    isOptional?: boolean;
+  }[];
 }
 
 // Templates type
@@ -71,6 +78,7 @@ function parseFieldDefinitions(args: string[]): {
   const fields: FieldDefinition[] = [];
   const skipFiles: string[] = [];
   let skipMode = false;
+  let currentField: FieldDefinition | null = null;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -85,8 +93,9 @@ function parseFieldDefinitions(args: string[]): {
       // Add to skip files list
       skipFiles.push(arg);
     } else {
-      // Process as field definition
+      // Check if this is a field definition or a property of an object field
       const parts = arg.split(":");
+
       if (parts.length >= 2) {
         let name = parts[0].trim();
         const type = parts[1].trim();
@@ -104,7 +113,79 @@ function parseFieldDefinitions(args: string[]): {
           name = name.slice(0, -1); // Remove the ! from the name
         }
 
-        fields.push({ name, type, ref, isRequired, isOptional });
+        // If this is an array of objects with properties defined
+        if (
+          type.toLowerCase() === "array" &&
+          ref?.toLowerCase() === "object" &&
+          parts.length > 3
+        ) {
+          currentField = {
+            name,
+            type,
+            ref,
+            isRequired,
+            isOptional,
+            objectProperties: [],
+          };
+          fields.push(currentField);
+
+          // Process the first property of the object
+          if (parts.length >= 5) {
+            const propName = parts[3];
+            const propType = parts[4];
+
+            // Check for optional/required markers in property name
+            let propertyName = propName;
+            const propIsOptional = propertyName.endsWith("?");
+            const propIsRequired = propertyName.endsWith("!");
+
+            if (propIsOptional) {
+              propertyName = propertyName.slice(0, -1);
+            }
+            if (propIsRequired) {
+              propertyName = propertyName.slice(0, -1);
+            }
+
+            currentField.objectProperties!.push({
+              name: propertyName,
+              type: propType,
+              isOptional: propIsOptional,
+              isRequired: propIsRequired,
+            });
+          }
+        } else if (
+          currentField &&
+          currentField.type.toLowerCase() === "array" &&
+          currentField.ref?.toLowerCase() === "object" &&
+          parts.length >= 2
+        ) {
+          // This is a property definition for the current object field
+          const propName = parts[0];
+          const propType = parts[1];
+
+          // Check for optional/required markers in property name
+          let propertyName = propName;
+          const propIsOptional = propertyName.endsWith("?");
+          const propIsRequired = propertyName.endsWith("!");
+
+          if (propIsOptional) {
+            propertyName = propertyName.slice(0, -1);
+          }
+          if (propIsRequired) {
+            propertyName = propertyName.slice(0, -1);
+          }
+
+          currentField.objectProperties!.push({
+            name: propertyName,
+            type: propType,
+            isOptional: propIsOptional,
+            isRequired: propIsRequired,
+          });
+        } else {
+          // This is a new field definition
+          currentField = null;
+          fields.push({ name, type, ref, isRequired, isOptional });
+        }
       }
     }
   }
@@ -116,41 +197,35 @@ function generateInterfaceContent(
   camelCaseName: string,
   fields: FieldDefinition[]
 ): string {
-  let interfaceContent = `import { Model, Types } from 'mongoose';\n\nexport type I${camelCaseName} = {\n`;
+  let interfaceContent = `import { Model, Types } from 'mongoose';\n\n`;
+
+  // Add nested interfaces for array of objects
+  fields.forEach((field) => {
+    if (
+      field.type.toLowerCase() === "array" &&
+      field.ref?.toLowerCase() === "object" &&
+      field.objectProperties?.length
+    ) {
+      const nestedInterfaceName = `${toCamelCase(field.name)}Item`;
+      interfaceContent += `export interface ${nestedInterfaceName} {\n`;
+
+      // Add properties from the objectProperties array
+      field.objectProperties.forEach((prop) => {
+        let tsType = mapToTypeScriptType(prop.type);
+        const optionalMarker = prop.isOptional ? "?" : "";
+        interfaceContent += `  ${prop.name}${optionalMarker}: ${tsType};\n`;
+      });
+
+      interfaceContent += `}\n\n`;
+    }
+  });
+
+  interfaceContent += `export type I${camelCaseName} = {\n`;
 
   // Add fields to interface
   if (fields.length > 0) {
     fields.forEach((field) => {
-      let tsType = "string"; // Default type
-
-      // Map common MongoDB types to TypeScript types
-      switch (field.type.toLowerCase()) {
-        case "string":
-          tsType = "string";
-          break;
-        case "number":
-          tsType = "number";
-          break;
-        case "boolean":
-          tsType = "boolean";
-          break;
-        case "date":
-          tsType = "Date";
-          break;
-        case "array":
-          // If it's an array with a reference, use ObjectId[]
-          tsType = field.ref ? `Types.ObjectId[]` : "any[]";
-          break;
-        case "object":
-          tsType = "Record<string, any>";
-          break;
-        case "objectid":
-        case "id":
-          tsType = "Types.ObjectId";
-          break;
-        default:
-          tsType = "any";
-      }
+      let tsType = mapToTypeScriptType(field.type, field);
 
       // Add optional marker to the interface field if needed
       const optionalMarker = field.isOptional ? "?" : "";
@@ -165,53 +240,85 @@ function generateInterfaceContent(
   return interfaceContent;
 }
 
+// Helper function to map types to TypeScript types
+function mapToTypeScriptType(type: string, field?: FieldDefinition): string {
+  switch (type.toLowerCase()) {
+    case "string":
+      return "string";
+    case "number":
+      return "number";
+    case "boolean":
+      return "boolean";
+    case "date":
+      return "Date";
+    case "array":
+      // If it's an array with a reference
+      if (field?.ref) {
+        if (
+          field.ref.toLowerCase() === "object" &&
+          field.objectProperties?.length
+        ) {
+          // Array of objects with defined structure
+          const nestedInterfaceName = `${toCamelCase(field.name)}Item`;
+          return `${nestedInterfaceName}[]`;
+        } else {
+          // Array of references to other models
+          return `Types.ObjectId[]`;
+        }
+      } else {
+        return "any[]";
+      }
+    case "object":
+      return "Record<string, any>";
+    case "objectid":
+    case "id":
+      return "Types.ObjectId";
+    default:
+      return "any";
+  }
+}
+
 function generateModelContent(
   camelCaseName: string,
   folderName: string,
   fields: FieldDefinition[]
 ): string {
-  let modelContent = `import { Schema, model } from 'mongoose';\nimport { I${camelCaseName}, ${camelCaseName}Model } from './${folderName}.interface'; \n\nconst ${folderName}Schema = new Schema<I${camelCaseName}, ${camelCaseName}Model>({\n`;
+  let modelContent = `import { Schema, model } from 'mongoose';\nimport { I${camelCaseName}, ${camelCaseName}Model } from './${folderName}.interface'; \n\n`;
+
+  // Add nested schemas for array of objects
+  fields.forEach((field) => {
+    if (
+      field.type.toLowerCase() === "array" &&
+      field.ref?.toLowerCase() === "object" &&
+      field.objectProperties?.length
+    ) {
+      const nestedSchemaName = `${field.name}ItemSchema`;
+      modelContent += `const ${nestedSchemaName} = new Schema({\n`;
+
+      // Add properties from the objectProperties array
+      field.objectProperties.forEach((prop) => {
+        let schemaType = mapToMongooseType(prop.type);
+        let additionalProps = "";
+
+        // Add required property if marked as required
+        if (prop.isRequired) {
+          additionalProps += ", required: true";
+        }
+
+        modelContent += `  ${prop.name}: { type: ${schemaType}${additionalProps} },\n`;
+      });
+
+      modelContent += `}, { _id: false });\n\n`;
+    }
+  });
+
+  modelContent += `const ${folderName}Schema = new Schema<I${camelCaseName}, ${camelCaseName}Model>({\n`;
 
   // Add fields to schema
   if (fields.length > 0) {
     fields.forEach((field) => {
-      let schemaType = "String"; // Default type
+      let schemaType = mapToMongooseType(field.type, field);
       let additionalProps = "";
-
-      // Map to Mongoose schema types
-      switch (field.type.toLowerCase()) {
-        case "string":
-          schemaType = "String";
-          break;
-        case "number":
-          schemaType = "Number";
-          break;
-        case "boolean":
-          schemaType = "Boolean";
-          break;
-        case "date":
-          schemaType = "Date";
-          break;
-        case "array":
-          if (field.ref) {
-            // Array of references
-            schemaType = "[Schema.Types.ObjectId]";
-            additionalProps = `, ref: '${field.ref}'`;
-          } else {
-            schemaType = "[Schema.Types.Mixed]";
-          }
-          break;
-        case "object":
-          schemaType = "Schema.Types.Mixed";
-          break;
-        case "objectid":
-        case "id":
-          schemaType = "Schema.Types.ObjectId";
-          additionalProps = field.ref ? `, ref: '${field.ref}'` : "";
-          break;
-        default:
-          schemaType = "String";
-      }
 
       // Add required property if marked as required
       if (field.isRequired) {
@@ -229,11 +336,78 @@ function generateModelContent(
   return modelContent;
 }
 
+// Helper function to map types to Mongoose schema types
+function mapToMongooseType(type: string, field?: FieldDefinition): string {
+  switch (type.toLowerCase()) {
+    case "string":
+      return "String";
+    case "number":
+      return "Number";
+    case "boolean":
+      return "Boolean";
+    case "date":
+      return "Date";
+    case "array":
+      if (field?.ref) {
+        if (
+          field.ref.toLowerCase() === "object" &&
+          field.objectProperties?.length
+        ) {
+          // Array of objects with defined structure
+          const nestedSchemaName = `${field.name}ItemSchema`;
+          return `[${nestedSchemaName}]`;
+        } else {
+          // Array of references to other models
+          return "[Schema.Types.ObjectId]";
+        }
+      } else {
+        return "[Schema.Types.Mixed]";
+      }
+    case "object":
+      return "Schema.Types.Mixed";
+    case "objectid":
+    case "id":
+      return "Schema.Types.ObjectId";
+    default:
+      return "String";
+  }
+}
+
 function generateValidationContent(
   camelCaseName: string,
   fields: FieldDefinition[]
 ): string {
-  let validationContent = `import { z } from 'zod';\n\nexport const ${camelCaseName}Validations = {\n`;
+  let validationContent = `import { z } from 'zod';\n\n`;
+
+  // Add nested schemas for array of objects
+  fields.forEach((field) => {
+    if (
+      field.type.toLowerCase() === "array" &&
+      field.ref?.toLowerCase() === "object" &&
+      field.objectProperties?.length
+    ) {
+      const nestedSchemaName = `${field.name}ItemSchema`;
+      validationContent += `const ${nestedSchemaName} = z.object({\n`;
+
+      // Add properties from the objectProperties array
+      field.objectProperties.forEach((prop) => {
+        let zodType = mapToZodType(prop.type);
+
+        // Add required/optional modifiers
+        if (prop.isRequired) {
+          // Already required by default in Zod
+        } else if (prop.isOptional) {
+          zodType += ".optional()";
+        }
+
+        validationContent += `  ${prop.name}: ${zodType},\n`;
+      });
+
+      validationContent += `});\n\n`;
+    }
+  });
+
+  validationContent += `export const ${camelCaseName}Validations = {\n`;
 
   // Create validation schema
   validationContent += `  create: z.object({\n`;
@@ -241,39 +415,7 @@ function generateValidationContent(
   // Add validation for each field
   if (fields.length > 0) {
     fields.forEach((field) => {
-      let zodType = "z.string()";
-
-      // Map field types to Zod validators
-      switch (field.type.toLowerCase()) {
-        case "string":
-          zodType = "z.string()";
-          break;
-        case "number":
-          zodType = "z.number()";
-          break;
-        case "boolean":
-          zodType = "z.boolean()";
-          break;
-        case "date":
-          zodType = "z.string().datetime()";
-          break;
-        case "array":
-          if (field.ref) {
-            zodType = "z.array(z.string())"; // For ObjectId arrays
-          } else {
-            zodType = "z.array(z.any())";
-          }
-          break;
-        case "object":
-          zodType = "z.record(z.string(), z.any())";
-          break;
-        case "objectid":
-        case "id":
-          zodType = "z.string()"; // ObjectId as string
-          break;
-        default:
-          zodType = "z.any()";
-      }
+      let zodType = mapToZodType(field.type, field);
 
       // Add required/optional modifiers
       if (field.isRequired) {
@@ -295,39 +437,7 @@ function generateValidationContent(
 
   if (fields.length > 0) {
     fields.forEach((field) => {
-      let zodType = "z.string()";
-
-      // Map field types to Zod validators (same as above)
-      switch (field.type.toLowerCase()) {
-        case "string":
-          zodType = "z.string()";
-          break;
-        case "number":
-          zodType = "z.number()";
-          break;
-        case "boolean":
-          zodType = "z.boolean()";
-          break;
-        case "date":
-          zodType = "z.string().datetime()";
-          break;
-        case "array":
-          if (field.ref) {
-            zodType = "z.array(z.string())";
-          } else {
-            zodType = "z.array(z.any())";
-          }
-          break;
-        case "object":
-          zodType = "z.record(z.string(), z.any())";
-          break;
-        case "objectid":
-        case "id":
-          zodType = "z.string()";
-          break;
-        default:
-          zodType = "z.any()";
-      }
+      let zodType = mapToZodType(field.type, field);
 
       // All fields are optional in update
       zodType += ".optional()";
@@ -343,213 +453,41 @@ function generateValidationContent(
   return validationContent;
 }
 
-function createModule(
-  name: string,
-  fields: FieldDefinition[],
-  skipFiles: string[],
-  config: ModuleGeneratorConfig
-): void {
-  const camelCaseName = toCamelCase(name);
-  const folderName = camelCaseName.toLowerCase();
-  const folderPath = path.join(process.cwd(), config.modulesDir, folderName);
-
-  // Check if the folder already exists
-  if (!fs.existsSync(folderPath)) {
-    fs.mkdirSync(folderPath, { recursive: true });
-    console.log(`Created folder: ${folderName}`);
-  } else {
-    console.log(`Folder ${folderName} already exists.`);
-    return;
-  }
-
-  const templates: Templates = {
-    interface: generateInterfaceContent(camelCaseName, fields),
-    model: generateModelContent(camelCaseName, folderName, fields),
-    controller: `import { Request, Response, NextFunction } from 'express';\nimport { ${camelCaseName}Services } from './${folderName}.service';\n\nexport const ${camelCaseName}Controller = { };\n`,
-    service: `import { ${camelCaseName}Model } from './${folderName}.interface';\n\nexport const ${camelCaseName}Services = { };\n`,
-    route: `import express from 'express';\nimport { ${camelCaseName}Controller } from './${folderName}.controller';\n\nconst router = express.Router();\n \n\nexport const ${camelCaseName}Routes = router;\n`,
-    validation: generateValidationContent(camelCaseName, fields),
-    constants: `export const ${camelCaseName.toUpperCase()}_CONSTANT = 'someValue';\n`,
-  };
-
-  // Create each file, skipping those specified in skipFiles
-  Object.entries(templates).forEach(([key, content]) => {
-    // Skip if this file type is in the skipFiles array
-    if (skipFiles.includes(key)) {
-      console.log(`Skipping file: ${folderName}.${key}.ts`);
-      return;
-    }
-
-    const filePath = path.join(folderPath, `${folderName}.${key}.ts`);
-    fs.writeFileSync(filePath, content);
-    console.log(`Created file: ${filePath}`);
-  });
-
-  // Add the new module to the central `apiRoutes` array
-  // Skip route registration if route file is skipped
-  if (!skipFiles.includes("route")) {
-    updateRouterFile(folderName, camelCaseName, config);
-  } else {
-    console.log(`Skipping route registration for ${camelCaseName}`);
-  }
-}
-
-function updateRouterFile(
-  folderName: string,
-  camelCaseName: string,
-  config: ModuleGeneratorConfig
-): void {
-  const routerPath = path.join(process.cwd(), config.routesFile);
-
-  // Check if router file exists
-  if (!fs.existsSync(routerPath)) {
-    console.warn(
-      `Router file not found at ${routerPath}. Skipping route registration.`
-    );
-    return;
-  }
-
-  const routeImport = `import { ${camelCaseName}Routes } from '../app/modules/${folderName}/${folderName}.route';`;
-  const routeEntry = `  { path: '/${folderName}', route: ${camelCaseName}Routes }`;
-
-  try {
-    let routerFileContent = fs.readFileSync(routerPath, "utf-8");
-
-    // Check if the import statement is already present
-    if (!routerFileContent.includes(routeImport)) {
-      // Find the last import statement
-      const lastImportIndex = routerFileContent.lastIndexOf("import");
-      const endOfImports = routerFileContent.indexOf("\n", lastImportIndex);
-
-      // Insert new import after the last import
-      const beforeImports = routerFileContent.substring(0, endOfImports + 1);
-      const afterImports = routerFileContent.substring(endOfImports + 1);
-      routerFileContent = `${beforeImports}${routeImport}\n${afterImports}`;
-    }
-
-    // Find the apiRoutes array
-    // Improved regex to match the array declaration and opening bracket
-    const apiRoutesRegex = /const\s+apiRoutes\s*:\s*{[^}]*}\[\]\s*=\s*\[/;
-    const match = routerFileContent.match(apiRoutesRegex);
-
-    if (match) {
-      const apiRoutesStart = match.index! + match[0].length;
-      const apiRoutesEndIndex = findClosingBracketIndex(
-        routerFileContent,
-        apiRoutesStart
-      );
-
-      // Check if route entry already exists
-      if (!routerFileContent.includes(`path: '/${folderName}'`)) {
-        // Get the content inside the array
-        const arrayContent = routerFileContent
-          .substring(apiRoutesStart, apiRoutesEndIndex)
-          .trim();
-
-        // Add the new route entry
-        const newArrayContent = arrayContent
-          ? `${arrayContent},\n${routeEntry}`
-          : routeEntry;
-
-        // Replace the array content
-        routerFileContent =
-          routerFileContent.substring(0, apiRoutesStart) +
-          "\n" +
-          newArrayContent +
-          "\n" +
-          routerFileContent.substring(apiRoutesEndIndex);
-      }
-
-      // Write the updated content back to the file
-      fs.writeFileSync(routerPath, routerFileContent, "utf-8");
-      console.log(`✅ Added route for ${camelCaseName} to central router.`);
-    } else {
-      // Fallback approach if the regex doesn't match
-      console.log("Using fallback approach to update router file...");
-
-      // Look for the array closing and the forEach
-      const arrayEndRegex = /\]\s*\n\s*apiRoutes\.forEach/;
-      const endMatch = routerFileContent.match(arrayEndRegex);
-
-      if (endMatch) {
-        const insertPosition = endMatch.index!;
-
-        // Check if route entry already exists
-        if (!routerFileContent.includes(`path: '/${folderName}'`)) {
-          // Insert the new route before the array closing bracket
-          const beforeInsert = routerFileContent.substring(0, insertPosition);
-          const afterInsert = routerFileContent.substring(insertPosition);
-
-          routerFileContent = `${beforeInsert.trimEnd()},\n${routeEntry}\n${afterInsert}`;
-
-          // Write the updated content back to the file
-          fs.writeFileSync(routerPath, routerFileContent, "utf-8");
-          console.log(
-            `✅ Added route for ${camelCaseName} to central router using fallback method.`
-          );
+// Helper function to map types to Zod validators
+function mapToZodType(type: string, field?: FieldDefinition): string {
+  switch (type.toLowerCase()) {
+    case "string":
+      return "z.string()";
+    case "number":
+      return "z.number()";
+    case "boolean":
+      return "z.boolean()";
+    case "date":
+      return "z.string().datetime()";
+    case "array":
+      if (field?.ref) {
+        if (
+          field.ref.toLowerCase() === "object" &&
+          field.objectProperties?.length
+        ) {
+          // Array of objects with defined structure
+          const nestedSchemaName = `${field.name}ItemSchema`;
+          return `z.array(${nestedSchemaName})`;
+        } else {
+          // Array of references to other models
+          return "z.array(z.string())";
         }
       } else {
-        console.error("Failed to find apiRoutes array in the router file.");
+        return "z.array(z.any())";
       }
-    }
-  } catch (error) {
-    console.error("Error updating router file:", error);
+    case "object":
+      return "z.record(z.string(), z.any())";
+    case "objectid":
+    case "id":
+      return "z.string()"; // ObjectId as string
+    default:
+      return "z.any()";
   }
 }
 
-// Helper function to find the index of the closing bracket
-function findClosingBracketIndex(text: string, startIndex: number): number {
-  let bracketCount = 1;
-  for (let i = startIndex; i < text.length; i++) {
-    if (text[i] === "[") {
-      bracketCount++;
-    } else if (text[i] === "]") {
-      bracketCount--;
-      if (bracketCount === 0) {
-        return i;
-      }
-    }
-  }
-  return -1;
-}
-
-// Main CLI function
-function main() {
-  try {
-    const config = loadConfig();
-    const program = new Command();
-
-    program
-      .name("create-module")
-      .description("Generate Express module files with Mongoose models")
-      .version("1.0.4")
-      .argument("<name>", "Module name")
-      .option("-c, --config <path>", "Path to custom config file")
-      .option("--modules-dir <path>", "Path to modules directory")
-      .option("--routes-file <path>", "Path to routes file")
-      .allowUnknownOption(true) // Allow field definitions to be passed
-      .action((name: string, options: any) => {
-        // Override config with CLI options
-        if (options.modulesDir) {
-          config.modulesDir = options.modulesDir;
-        }
-        if (options.routesFile) {
-          config.routesFile = options.routesFile;
-        }
-
-        // Get field definitions from remaining arguments
-        const fieldArgs = program.args.slice(1);
-        const { fields, skipFiles } = parseFieldDefinitions(fieldArgs);
-
-        createModule(name, fields, skipFiles, config);
-      });
-
-    program.parse();
-  } catch (error) {
-    console.error("Error executing command:", error);
-    process.exit(1);
-  }
-}
-
-// Execute the CLI
-main();
+// ... rest of the code ...

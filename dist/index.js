@@ -37,27 +37,41 @@ function toCamelCase(str) {
 }
 function parseFieldDefinitions(args) {
     const fields = [];
-    args.forEach((arg) => {
-        // Split by colon to get name, type, and optional reference
-        const parts = arg.split(":");
-        if (parts.length >= 2) {
-            let name = parts[0].trim();
-            const type = parts[1].trim();
-            const ref = parts.length > 2 ? parts[2].trim() : undefined;
-            // Check for optional marker (?)
-            const isOptional = name.endsWith("?");
-            if (isOptional) {
-                name = name.slice(0, -1); // Remove the ? from the name
-            }
-            // Check for required marker (!)
-            const isRequired = name.endsWith("!");
-            if (isRequired) {
-                name = name.slice(0, -1); // Remove the ! from the name
-            }
-            fields.push({ name, type, ref, isRequired, isOptional });
+    const skipFiles = [];
+    let skipMode = false;
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+        // Check if we've reached the skip flag
+        if (arg === "--skip") {
+            skipMode = true;
+            continue;
         }
-    });
-    return fields;
+        if (skipMode) {
+            // Add to skip files list
+            skipFiles.push(arg);
+        }
+        else {
+            // Process as field definition
+            const parts = arg.split(":");
+            if (parts.length >= 2) {
+                let name = parts[0].trim();
+                const type = parts[1].trim();
+                const ref = parts.length > 2 ? parts[2].trim() : undefined;
+                // Check for optional marker (?)
+                const isOptional = name.endsWith("?");
+                if (isOptional) {
+                    name = name.slice(0, -1); // Remove the ? from the name
+                }
+                // Check for required marker (!)
+                const isRequired = name.endsWith("!");
+                if (isRequired) {
+                    name = name.slice(0, -1); // Remove the ! from the name
+                }
+                fields.push({ name, type, ref, isRequired, isOptional });
+            }
+        }
+    }
+    return { fields, skipFiles };
 }
 function generateInterfaceContent(camelCaseName, fields) {
     let interfaceContent = `import { Model, Types } from 'mongoose';\n\nexport type I${camelCaseName} = {\n`;
@@ -159,7 +173,109 @@ function generateModelContent(camelCaseName, folderName, fields) {
     modelContent += `}, {\n  timestamps: true\n});\n\nexport const ${camelCaseName} = model<I${camelCaseName}, ${camelCaseName}Model>('${camelCaseName}', ${folderName}Schema);\n`;
     return modelContent;
 }
-function createModule(name, fields, config) {
+function generateValidationContent(camelCaseName, fields) {
+    let validationContent = `import { z } from 'zod';\n\nexport const ${camelCaseName}Validations = {\n`;
+    // Create validation schema
+    validationContent += `  create: z.object({\n`;
+    // Add validation for each field
+    if (fields.length > 0) {
+        fields.forEach((field) => {
+            let zodType = "z.string()";
+            // Map field types to Zod validators
+            switch (field.type.toLowerCase()) {
+                case "string":
+                    zodType = "z.string()";
+                    break;
+                case "number":
+                    zodType = "z.number()";
+                    break;
+                case "boolean":
+                    zodType = "z.boolean()";
+                    break;
+                case "date":
+                    zodType = "z.string().datetime()";
+                    break;
+                case "array":
+                    if (field.ref) {
+                        zodType = "z.array(z.string())"; // For ObjectId arrays
+                    }
+                    else {
+                        zodType = "z.array(z.any())";
+                    }
+                    break;
+                case "object":
+                    zodType = "z.record(z.string(), z.any())";
+                    break;
+                case "objectid":
+                case "id":
+                    zodType = "z.string()"; // ObjectId as string
+                    break;
+                default:
+                    zodType = "z.any()";
+            }
+            // Add required/optional modifiers
+            if (field.isRequired) {
+                // Already required by default in Zod
+            }
+            else if (field.isOptional) {
+                zodType += ".optional()";
+            }
+            validationContent += `    ${field.name}: ${zodType},\n`;
+        });
+    }
+    else {
+        validationContent += `    // Add validation fields\n`;
+    }
+    validationContent += `  }),\n\n`;
+    // Add update validation schema (similar to create but all fields optional)
+    validationContent += `  update: z.object({\n`;
+    if (fields.length > 0) {
+        fields.forEach((field) => {
+            let zodType = "z.string()";
+            // Map field types to Zod validators (same as above)
+            switch (field.type.toLowerCase()) {
+                case "string":
+                    zodType = "z.string()";
+                    break;
+                case "number":
+                    zodType = "z.number()";
+                    break;
+                case "boolean":
+                    zodType = "z.boolean()";
+                    break;
+                case "date":
+                    zodType = "z.string().datetime()";
+                    break;
+                case "array":
+                    if (field.ref) {
+                        zodType = "z.array(z.string())";
+                    }
+                    else {
+                        zodType = "z.array(z.any())";
+                    }
+                    break;
+                case "object":
+                    zodType = "z.record(z.string(), z.any())";
+                    break;
+                case "objectid":
+                case "id":
+                    zodType = "z.string()";
+                    break;
+                default:
+                    zodType = "z.any()";
+            }
+            // All fields are optional in update
+            zodType += ".optional()";
+            validationContent += `    ${field.name}: ${zodType},\n`;
+        });
+    }
+    else {
+        validationContent += `    // Add validation fields\n`;
+    }
+    validationContent += `  }),\n};\n`;
+    return validationContent;
+}
+function createModule(name, fields, skipFiles, config) {
     const camelCaseName = toCamelCase(name);
     const folderName = camelCaseName.toLowerCase();
     const folderPath = path_1.default.join(process.cwd(), config.modulesDir, folderName);
@@ -178,16 +294,28 @@ function createModule(name, fields, config) {
         controller: `import { Request, Response, NextFunction } from 'express';\nimport { ${camelCaseName}Services } from './${folderName}.service';\n\nexport const ${camelCaseName}Controller = { };\n`,
         service: `import { ${camelCaseName}Model } from './${folderName}.interface';\n\nexport const ${camelCaseName}Services = { };\n`,
         route: `import express from 'express';\nimport { ${camelCaseName}Controller } from './${folderName}.controller';\n\nconst router = express.Router();\n \n\nexport const ${camelCaseName}Routes = router;\n`,
-        validation: `import { z } from 'zod';\n\nexport const ${camelCaseName}Validations = {  };\n`,
+        validation: generateValidationContent(camelCaseName, fields),
         constants: `export const ${camelCaseName.toUpperCase()}_CONSTANT = 'someValue';\n`,
     };
+    // Create each file, skipping those specified in skipFiles
     Object.entries(templates).forEach(([key, content]) => {
+        // Skip if this file type is in the skipFiles array
+        if (skipFiles.includes(key)) {
+            console.log(`Skipping file: ${folderName}.${key}.ts`);
+            return;
+        }
         const filePath = path_1.default.join(folderPath, `${folderName}.${key}.ts`);
         fs_1.default.writeFileSync(filePath, content);
         console.log(`Created file: ${filePath}`);
     });
     // Add the new module to the central `apiRoutes` array
-    updateRouterFile(folderName, camelCaseName, config);
+    // Skip route registration if route file is skipped
+    if (!skipFiles.includes("route")) {
+        updateRouterFile(folderName, camelCaseName, config);
+    }
+    else {
+        console.log(`Skipping route registration for ${camelCaseName}`);
+    }
 }
 function updateRouterFile(folderName, camelCaseName, config) {
     const routerPath = path_1.default.join(process.cwd(), config.routesFile);
@@ -291,7 +419,7 @@ function main() {
         program
             .name("create-module")
             .description("Generate Express module files with Mongoose models")
-            .version("1.0.3")
+            .version("1.0.4")
             .argument("<name>", "Module name")
             .option("-c, --config <path>", "Path to custom config file")
             .option("--modules-dir <path>", "Path to modules directory")
@@ -307,8 +435,8 @@ function main() {
             }
             // Get field definitions from remaining arguments
             const fieldArgs = program.args.slice(1);
-            const fields = parseFieldDefinitions(fieldArgs);
-            createModule(name, fields, config);
+            const { fields, skipFiles } = parseFieldDefinitions(fieldArgs);
+            createModule(name, fields, skipFiles, config);
         });
         program.parse();
     }

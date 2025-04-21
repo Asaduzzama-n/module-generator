@@ -1,9 +1,9 @@
-I'll update the README.md file to reflect the new features and the current version (1.0.6).
+I'll update the README.md file to reflect the new features and version 1.0.7.
 
 ````markdown:d:\module-generator\README.md
 # module-generator
 
-A command-line tool for generating Express.js modules with Mongoose models, controllers, services, and routes. Version: 1.0.6
+A command-line tool for generating Express.js modules with Mongoose models, controllers, services, and routes. Version: 1.0.7
 
 ## Features
 
@@ -14,6 +14,7 @@ A command-line tool for generating Express.js modules with Mongoose models, cont
 - Configurable through package.json or command-line options
 - Automatic Zod validation schema generation based on field definitions
 - Ability to skip specific file types during generation
+- Support for complex array of objects with defined properties
 
 ## Installation
 
@@ -93,6 +94,26 @@ Fields follow this syntax: `fieldName:type:reference`
 - Add `?` after the field name to mark it as optional: `email?:string`
 - Add `!` after the field name to mark it as required: `email!:string`
 
+### Array of Objects with Properties
+
+You can define arrays of objects with specific properties using this syntax:
+
+```bash
+fieldName:array:object:propName1:propType1:propName2:propType2...
+```
+
+For example:
+
+```bash
+variants:array:object:name:string:price:number:color:string:size:string
+```
+
+You can also mark object properties as optional or required:
+
+```bash
+variants:array:object:name:string:price:number:color?:string:size!:string
+```
+
 ### Skipping File Types
 
 You can skip generating specific file types by using the `--skip` flag followed by the file types:
@@ -115,6 +136,9 @@ npx create-module Product name:string price:number category:objectId:Category
 # Create a Blog module with optional and required fields
 npx create-module Blog title!:string content:string author?:objectId:User tags:array
 
+# Create a Product module with array of objects
+npx create-module Product name:string price:number variants:array:object:name:string:price:number:color:string:size:string
+
 # Create a Comment module but skip certain files
 npx create-module Comment text:string author:objectId:User --skip constants validation
 ```
@@ -131,7 +155,7 @@ npx create-module User --modules-dir src/modules --routes-file src/api/routes.ts
 
 ### Interface (.interface.ts)
 
-Contains TypeScript interfaces for your model.
+Contains TypeScript interfaces for your model and any nested types.
 
 ### Model (.model.ts)
 
