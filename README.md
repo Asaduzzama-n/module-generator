@@ -1,9 +1,9 @@
-Okay, I can help update the `README.md` file. Since you haven't specified the exact changes, I'll update the version number mentioned in the README to match the current version `1.0.4` from your `package.json`.
+I'll update the README.md file to reflect the new features and the current version (1.0.6).
 
 ````markdown:d:\module-generator\README.md
 # module-generator
 
-A command-line tool for generating Express.js modules with Mongoose models, controllers, services, and routes. Version: 1.0.4
+A command-line tool for generating Express.js modules with Mongoose models, controllers, services, and routes. Version: 1.0.6
 
 ## Features
 
@@ -12,19 +12,21 @@ A command-line tool for generating Express.js modules with Mongoose models, cont
 - Automatically register new routes in your central router file
 - Support for custom field definitions with various data types
 - Configurable through package.json or command-line options
+- Automatic Zod validation schema generation based on field definitions
+- Ability to skip specific file types during generation
 
 ## Installation
 
 ### Global Installation
 
 ```bash
-npm install -g express-module-generator@1.0.4
+npm install -g express-module-generator
 ````
 
 ### Local Installation
 
 ```bash
-npm install --save-dev express-module-generator@1.0.4
+npm install --save-dev express-module-generator
 ```
 
 ## Configuration
@@ -91,6 +93,16 @@ Fields follow this syntax: `fieldName:type:reference`
 - Add `?` after the field name to mark it as optional: `email?:string`
 - Add `!` after the field name to mark it as required: `email!:string`
 
+### Skipping File Types
+
+You can skip generating specific file types by using the `--skip` flag followed by the file types:
+
+```bash
+npx create-module User name:string email:string --skip validation route
+```
+
+This will skip generating the validation and route files for the module.
+
 ### Examples
 
 ```bash
@@ -102,6 +114,9 @@ npx create-module Product name:string price:number category:objectId:Category
 
 # Create a Blog module with optional and required fields
 npx create-module Blog title!:string content:string author?:objectId:User tags:array
+
+# Create a Comment module but skip certain files
+npx create-module Comment text:string author:objectId:User --skip constants validation
 ```
 
 ### Command-line Options
@@ -136,7 +151,7 @@ Contains Express router definitions for the module.
 
 ### Validation (.validation.ts)
 
-Contains Zod validation schemas for request validation.
+Contains Zod validation schemas for request validation, automatically generated based on your field definitions.
 
 ### Constants (.constants.ts)
 
