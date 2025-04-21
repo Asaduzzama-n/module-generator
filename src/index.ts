@@ -342,7 +342,6 @@ function generateModelContent(
             break;
           case "objectid":
           case "id":
-            schemaType = "Schema.Types.ObjectId";
             break;
           default:
             schemaType = "String";
@@ -607,7 +606,7 @@ function createModule(
     interface: generateInterfaceContent(camelCaseName, fields),
     model: generateModelContent(camelCaseName, folderName, fields),
     controller: `import { Request, Response, NextFunction } from 'express';\nimport { ${camelCaseName}Services } from './${folderName}.service';\n\nexport const ${camelCaseName}Controller = { };\n`,
-    service: `import { ${camelCaseName}Model } from './${folderName}.interface';\n\nexport const ${camelCaseName}Services = { };\n`,
+    service: `import { I${camelCaseName} } from './${folderName}.interface';\n\nimport { ${camelCaseName} } from './${folderName}.model';\n\nexport const ${camelCaseName}Services = { };\n`,
     route: `import express from 'express';\nimport { ${camelCaseName}Controller } from './${folderName}.controller';\n\nconst router = express.Router();\n \n\nexport const ${camelCaseName}Routes = router;\n`,
     validation: generateValidationContent(camelCaseName, fields),
     constants: `export const ${camelCaseName.toUpperCase()}_CONSTANT = 'someValue';\n`,
