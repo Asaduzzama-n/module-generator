@@ -1,4 +1,4 @@
-I'll update the README.md file to reflect the new features and version 1.0.7.
+I'll update the README.md file to reflect the new features and version 1.0.9.
 
 ````markdown:d:\module-generator\README.md
 # module-generator

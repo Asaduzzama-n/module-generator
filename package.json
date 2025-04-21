@@ -1,6 +1,6 @@
 {
   "name": "express-module-generator",
-  "version": "1.0.7",
+  "version": "1.0.9",
   "description": "Generate Express modules with Mongoose models",
   "main": "dist/index.js",
   "bin": {

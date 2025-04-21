@@ -12,6 +12,7 @@ interface ModuleGeneratorConfig {
 
 // Field definition interface
 // Enhanced field definition interface to support nested object properties
+// Update the FieldDefinition interface to properly support object properties
 interface FieldDefinition {
   name: string;
   type: string;
@@ -78,7 +79,6 @@ function parseFieldDefinitions(args: string[]): {
   const fields: FieldDefinition[] = [];
   const skipFiles: string[] = [];
   let skipMode = false;
-  let currentField: FieldDefinition | null = null;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -93,106 +93,97 @@ function parseFieldDefinitions(args: string[]): {
       // Add to skip files list
       skipFiles.push(arg);
     } else {
-      // Check if this is a field definition or a property of an object field
-      const parts = arg.split(":");
+      try {
+        // Process as field definition
+        const parts = arg.split(":");
 
-      if (parts.length >= 2) {
-        let name = parts[0].trim();
-        const type = parts[1].trim();
-        const ref = parts.length > 2 ? parts[2].trim() : undefined;
+        if (parts.length >= 2) {
+          let name = parts[0].trim();
+          const type = parts[1].trim().toLowerCase();
 
-        // Check for optional marker (?)
-        const isOptional = name.endsWith("?");
-        if (isOptional) {
-          name = name.slice(0, -1); // Remove the ? from the name
-        }
+          // Check for optional marker (?)
+          const isOptional = name.endsWith("?");
+          if (isOptional) {
+            name = name.slice(0, -1); // Remove the ? from the name
+          }
 
-        // Check for required marker (!)
-        const isRequired = name.endsWith("!");
-        if (isRequired) {
-          name = name.slice(0, -1); // Remove the ! from the name
-        }
+          // Check for required marker (!)
+          const isRequired = name.endsWith("!");
+          if (isRequired) {
+            name = name.slice(0, -1); // Remove the ! from the name
+          }
 
-        // If this is an array of objects with properties defined
-        if (
-          type.toLowerCase() === "array" &&
-          ref?.toLowerCase() === "object" &&
-          parts.length > 3
-        ) {
-          currentField = {
-            name,
-            type,
-            ref,
-            isRequired,
-            isOptional,
-            objectProperties: [],
-          };
-          fields.push(currentField);
+          // Handle array of objects with properties
+          if (
+            type === "array" &&
+            parts.length > 2 &&
+            parts[2].toLowerCase() === "object"
+          ) {
+            console.log(`Processing array of objects field: ${name}`);
 
-          // Process the first property of the object
-          if (parts.length >= 5) {
-            const propName = parts[3];
-            const propType = parts[4];
+            // This is an array of objects with properties
+            const objectProperties = [];
 
-            // Check for optional/required markers in property name
-            let propertyName = propName;
-            const propIsOptional = propertyName.endsWith("?");
-            const propIsRequired = propertyName.endsWith("!");
+            // Process object properties (starting from index 3)
+            for (let j = 3; j < parts.length; j += 2) {
+              if (j + 1 < parts.length) {
+                let propName = parts[j];
+                const propType = parts[j + 1];
 
-            if (propIsOptional) {
-              propertyName = propertyName.slice(0, -1);
+                console.log(`  Property: ${propName}:${propType}`);
+
+                // Check for optional/required markers in property name
+                const propIsOptional = propName.endsWith("?");
+                const propIsRequired = propName.endsWith("!");
+
+                if (propIsOptional) {
+                  propName = propName.slice(0, -1);
+                }
+                if (propIsRequired) {
+                  propName = propName.slice(0, -1);
+                }
+
+                objectProperties.push({
+                  name: propName,
+                  type: propType,
+                  isOptional: propIsOptional,
+                  isRequired: propIsRequired,
+                });
+              }
             }
-            if (propIsRequired) {
-              propertyName = propertyName.slice(0, -1);
-            }
 
-            currentField.objectProperties!.push({
-              name: propertyName,
-              type: propType,
-              isOptional: propIsOptional,
-              isRequired: propIsRequired,
+            fields.push({
+              name,
+              type,
+              ref: "object",
+              isRequired,
+              isOptional,
+              objectProperties,
             });
-          }
-        } else if (
-          currentField &&
-          currentField.type.toLowerCase() === "array" &&
-          currentField.ref?.toLowerCase() === "object" &&
-          parts.length >= 2
-        ) {
-          // This is a property definition for the current object field
-          const propName = parts[0];
-          const propType = parts[1];
 
-          // Check for optional/required markers in property name
-          let propertyName = propName;
-          const propIsOptional = propertyName.endsWith("?");
-          const propIsRequired = propertyName.endsWith("!");
-
-          if (propIsOptional) {
-            propertyName = propertyName.slice(0, -1);
+            console.log(
+              `Added field with ${objectProperties.length} properties`
+            );
+          } else {
+            // Regular field
+            const ref = parts.length > 2 ? parts[2].trim() : undefined;
+            fields.push({ name, type, ref, isRequired, isOptional });
+            console.log(
+              `Added regular field: ${name}:${type}${ref ? `:${ref}` : ""}`
+            );
           }
-          if (propIsRequired) {
-            propertyName = propertyName.slice(0, -1);
-          }
-
-          currentField.objectProperties!.push({
-            name: propertyName,
-            type: propType,
-            isOptional: propIsOptional,
-            isRequired: propIsRequired,
-          });
-        } else {
-          // This is a new field definition
-          currentField = null;
-          fields.push({ name, type, ref, isRequired, isOptional });
         }
+      } catch (error) {
+        console.error(`Error parsing field definition: ${arg}`, error);
       }
     }
   }
 
+  console.log("Parsed fields:", JSON.stringify(fields, null, 2));
   return { fields, skipFiles };
 }
 
+// Update the generateInterfaceContent function to properly handle object properties
 function generateInterfaceContent(
   camelCaseName: string,
   fields: FieldDefinition[]
@@ -211,7 +202,36 @@ function generateInterfaceContent(
 
       // Add properties from the objectProperties array
       field.objectProperties.forEach((prop) => {
-        let tsType = mapToTypeScriptType(prop.type);
+        let tsType = "string"; // Default type
+
+        // Map common MongoDB types to TypeScript types
+        switch (prop.type.toLowerCase()) {
+          case "string":
+            tsType = "string";
+            break;
+          case "number":
+            tsType = "number";
+            break;
+          case "boolean":
+            tsType = "boolean";
+            break;
+          case "date":
+            tsType = "Date";
+            break;
+          case "array":
+            tsType = "any[]";
+            break;
+          case "object":
+            tsType = "Record<string, any>";
+            break;
+          case "objectid":
+          case "id":
+            tsType = "Types.ObjectId";
+            break;
+          default:
+            tsType = "any";
+        }
+
         const optionalMarker = prop.isOptional ? "?" : "";
         interfaceContent += `  ${prop.name}${optionalMarker}: ${tsType};\n`;
       });
@@ -297,8 +317,36 @@ function generateModelContent(
 
       // Add properties from the objectProperties array
       field.objectProperties.forEach((prop) => {
-        let schemaType = mapToMongooseType(prop.type);
+        let schemaType = "String"; // Default type
         let additionalProps = "";
+
+        // Map to Mongoose schema types
+        switch (prop.type.toLowerCase()) {
+          case "string":
+            schemaType = "String";
+            break;
+          case "number":
+            schemaType = "Number";
+            break;
+          case "boolean":
+            schemaType = "Boolean";
+            break;
+          case "date":
+            schemaType = "Date";
+            break;
+          case "array":
+            schemaType = "[Schema.Types.Mixed]";
+            break;
+          case "object":
+            schemaType = "Schema.Types.Mixed";
+            break;
+          case "objectid":
+          case "id":
+            schemaType = "Schema.Types.ObjectId";
+            break;
+          default:
+            schemaType = "String";
+        }
 
         // Add required property if marked as required
         if (prop.isRequired) {
@@ -490,4 +538,164 @@ function mapToZodType(type: string, field?: FieldDefinition): string {
   }
 }
 
-// ... rest of the code ...
+// Update the main function to properly handle the command arguments
+function main() {
+  try {
+    const config = loadConfig();
+    const program = new Command();
+
+    program
+      .name("create-module")
+      .description("Generate Express module files with Mongoose models")
+      .version("1.0.8")
+      .argument("<name>", "Module name")
+      .option("-c, --config <path>", "Path to custom config file")
+      .option("--modules-dir <path>", "Path to modules directory")
+      .option("--routes-file <path>", "Path to routes file")
+      .allowUnknownOption(true) // Allow field definitions to be passed
+      .action((name: string, options: any) => {
+        // Override config with CLI options
+        if (options.modulesDir) {
+          config.modulesDir = options.modulesDir;
+        }
+        if (options.routesFile) {
+          config.routesFile = options.routesFile;
+        }
+
+        // Get field definitions from remaining arguments
+        const fieldArgs = program.args.slice(1);
+        console.log("Processing field arguments:", fieldArgs);
+
+        const { fields, skipFiles } = parseFieldDefinitions(fieldArgs);
+
+        if (fields.length === 0) {
+          console.log("No fields were parsed. Check your command syntax.");
+          return;
+        }
+
+        createModule(name, fields, skipFiles, config);
+      });
+
+    program.parse();
+  } catch (error) {
+    console.error("Error executing command:", error);
+    process.exit(1);
+  }
+}
+
+// Make sure the createModule function is properly implemented
+function createModule(
+  name: string,
+  fields: FieldDefinition[],
+  skipFiles: string[],
+  config: ModuleGeneratorConfig
+): void {
+  const camelCaseName = toCamelCase(name);
+  const folderName = camelCaseName.toLowerCase();
+  const folderPath = path.join(process.cwd(), config.modulesDir, folderName);
+
+  // Check if the folder already exists
+  if (!fs.existsSync(folderPath)) {
+    fs.mkdirSync(folderPath, { recursive: true });
+    console.log(`Created folder: ${folderName}`);
+  } else {
+    console.log(`Folder ${folderName} already exists.`);
+    return;
+  }
+
+  const templates: Templates = {
+    interface: generateInterfaceContent(camelCaseName, fields),
+    model: generateModelContent(camelCaseName, folderName, fields),
+    controller: `import { Request, Response, NextFunction } from 'express';\nimport { ${camelCaseName}Services } from './${folderName}.service';\n\nexport const ${camelCaseName}Controller = { };\n`,
+    service: `import { ${camelCaseName}Model } from './${folderName}.interface';\n\nexport const ${camelCaseName}Services = { };\n`,
+    route: `import express from 'express';\nimport { ${camelCaseName}Controller } from './${folderName}.controller';\n\nconst router = express.Router();\n \n\nexport const ${camelCaseName}Routes = router;\n`,
+    validation: generateValidationContent(camelCaseName, fields),
+    constants: `export const ${camelCaseName.toUpperCase()}_CONSTANT = 'someValue';\n`,
+  };
+
+  // Create each file, skipping those specified in skipFiles
+  Object.entries(templates).forEach(([key, content]) => {
+    // Skip if this file type is in the skipFiles array
+    if (skipFiles.includes(key)) {
+      console.log(`Skipping file: ${folderName}.${key}.ts`);
+      return;
+    }
+
+    const filePath = path.join(folderPath, `${folderName}.${key}.ts`);
+    fs.writeFileSync(filePath, content);
+    console.log(`Created file: ${filePath}`);
+  });
+
+  // Add the new module to the central router file
+  updateRouterFile(folderName, camelCaseName, config);
+}
+
+// Make sure the updateRouterFile function is properly implemented
+function updateRouterFile(
+  folderName: string,
+  camelCaseName: string,
+  config: ModuleGeneratorConfig
+): void {
+  const routerFilePath = path.join(process.cwd(), config.routesFile);
+
+  // Check if the router file exists
+  if (!fs.existsSync(routerFilePath)) {
+    console.warn(`Router file not found: ${routerFilePath}`);
+    return;
+  }
+
+  try {
+    let routerContent = fs.readFileSync(routerFilePath, "utf-8");
+
+    // Check if the import already exists
+    const importStatement = `import { ${camelCaseName}Routes } from '../app/modules/${folderName}/${folderName}.route';`;
+    if (!routerContent.includes(importStatement)) {
+      // Find the last import statement
+      const lastImportIndex = routerContent.lastIndexOf("import ");
+      const lastImportEndIndex = routerContent.indexOf("\n", lastImportIndex);
+
+      if (lastImportIndex !== -1) {
+        // Insert the new import after the last import
+        routerContent =
+          routerContent.slice(0, lastImportEndIndex + 1) +
+          importStatement +
+          "\n" +
+          routerContent.slice(lastImportEndIndex + 1);
+      } else {
+        // No imports found, add at the beginning
+        routerContent = importStatement + "\n" + routerContent;
+      }
+    }
+
+    // Check if the route registration already exists
+    const routeRegistration = `router.use('/${folderName}', ${camelCaseName}Routes);`;
+    if (!routerContent.includes(routeRegistration)) {
+      // Find the router definition
+      const routerDefIndex = routerContent.indexOf("const router");
+      if (routerDefIndex !== -1) {
+        // Find a good place to insert the route registration
+        const exportIndex = routerContent.lastIndexOf("export");
+        if (exportIndex !== -1) {
+          // Insert before the export statement
+          routerContent =
+            routerContent.slice(0, exportIndex) +
+            routeRegistration +
+            "\n\n" +
+            routerContent.slice(exportIndex);
+        } else {
+          // Append at the end
+          routerContent += "\n" + routeRegistration + "\n";
+        }
+      }
+    }
+
+    // Write the updated content back to the file
+    fs.writeFileSync(routerFilePath, routerContent);
+    console.log(`Updated router file: ${routerFilePath}`);
+  } catch (error) {
+    console.error(`Error updating router file: ${error}`);
+  }
+}
+
+// Call the main function to start the CLI
+main();
