@@ -275,10 +275,10 @@ function mapToTypeScriptType(field: FieldDefinition): string {
           case "id":
             return "Types.ObjectId[]";
           default:
-            return "any[]";
+            return "string[]"; // Default to string[] instead of any[]
         }
       } else {
-        return "any[]";
+        return "string[]"; // Default to string[] instead of any[]
       }
     case "object":
       if (field.objectProperties?.length) {
@@ -298,81 +298,8 @@ function mapToTypeScriptType(field: FieldDefinition): string {
     case "id":
       return "Types.ObjectId";
     default:
-      return "any";
+      return "string"; // Default to string instead of any
   }
-}
-
-// Update the model generation to handle complex nested structures
-function generateModelContent(
-  camelCaseName: string,
-  folderName: string,
-  fields: FieldDefinition[]
-): string {
-  let modelContent = `import { Schema, model } from 'mongoose';\nimport { I${camelCaseName}, ${camelCaseName}Model } from './${folderName}.interface'; \n\n`;
-
-  // Generate nested schemas
-  const nestedSchemas = generateNestedSchemas(fields);
-  modelContent += nestedSchemas;
-
-  modelContent += `const ${folderName}Schema = new Schema<I${camelCaseName}, ${camelCaseName}Model>({\n`;
-
-  // Add fields to schema
-  if (fields.length > 0) {
-    fields.forEach((field) => {
-      let schemaType = mapToMongooseType(field);
-      let additionalProps = "";
-
-      // Add required property if marked as required
-      if (field.isRequired) {
-        additionalProps += ", required: true";
-      }
-
-      modelContent += `  ${field.name}: ${schemaType}${additionalProps},\n`;
-    });
-  } else {
-    modelContent += "  // Define schema fields here\n";
-  }
-
-  modelContent += `}, {\n  timestamps: true\n});\n\nexport const ${camelCaseName} = model<I${camelCaseName}, ${camelCaseName}Model>('${camelCaseName}', ${folderName}Schema);\n`;
-
-  return modelContent;
-}
-
-// Helper function to generate nested schemas
-function generateNestedSchemas(fields: FieldDefinition[]): string {
-  let schemas = "";
-
-  fields.forEach((field) => {
-    if (
-      field.type.toLowerCase() === "array" &&
-      field.ref?.toLowerCase() === "object" &&
-      field.objectProperties?.length
-    ) {
-      const nestedSchemaName = `${field.name}ItemSchema`;
-      schemas += `const ${nestedSchemaName} = new Schema({\n`;
-
-      // Add properties
-      field.objectProperties.forEach((prop) => {
-        let schemaType = mapToMongooseType(prop);
-        let additionalProps = "";
-
-        // Add required property if marked as required
-        if (prop.isRequired) {
-          additionalProps += ", required: true";
-        }
-
-        schemas += `  ${prop.name}: ${schemaType}${additionalProps},\n`;
-      });
-
-      schemas += `}, { _id: false });\n\n`;
-
-      // Check for nested objects within this schema
-      const nestedSchemas = generateNestedSchemas(field.objectProperties);
-      schemas += nestedSchemas;
-    }
-  });
-
-  return schemas;
 }
 
 // Helper function to map field definitions to Mongoose schema types
@@ -411,10 +338,10 @@ function mapToMongooseType(field: FieldDefinition): string {
               field.ref || "Document"
             }' }`;
           default:
-            return "{ type: [Schema.Types.Mixed] }";
+            return "{ type: [String] }"; // Default to String instead of Mixed
         }
       } else {
-        return "{ type: [Schema.Types.Mixed] }";
+        return "{ type: [String] }"; // Default to String instead of Mixed
       }
     case "object":
       if (field.objectProperties?.length) {
@@ -433,8 +360,85 @@ function mapToMongooseType(field: FieldDefinition): string {
         ? `{ type: Schema.Types.ObjectId, ref: '${field.ref}' }`
         : "{ type: Schema.Types.ObjectId }";
     default:
-      return "{ type: String }";
+      return "{ type: String }"; // Default to String instead of Mixed
   }
+}
+
+// Remove the second implementation of generateNestedInterfaces (around line 218)
+// Remove the second implementation of generateNestedSchemas (around line 300)
+// Remove the second implementation of mapToMongooseType (around line 350)
+
+// Helper function to generate nested schemas
+function generateNestedSchemas(fields: FieldDefinition[]): string {
+  let schemas = "";
+
+  fields.forEach((field) => {
+    if (
+      field.type.toLowerCase() === "array" &&
+      field.ref?.toLowerCase() === "object" &&
+      field.objectProperties?.length
+    ) {
+      const nestedSchemaName = `${field.name}ItemSchema`;
+      schemas += `const ${nestedSchemaName} = new Schema({\n`;
+
+      // Add properties
+      field.objectProperties.forEach((prop) => {
+        let schemaType = mapToMongooseType(prop);
+        let additionalProps = "";
+
+        // Add required property if marked as required
+        if (prop.isRequired) {
+          additionalProps += ", required: true";
+        }
+
+        schemas += `  ${prop.name}: ${schemaType}${additionalProps},\n`;
+      });
+
+      schemas += `}, { _id: false });\n\n`;
+
+      // Check for nested objects within this schema
+      const nestedSchemas = generateNestedSchemas(field.objectProperties);
+      schemas += nestedSchemas;
+    }
+  });
+
+  return schemas;
+}
+
+// Update the model generation to handle complex nested structures
+function generateModelContent(
+  camelCaseName: string,
+  folderName: string,
+  fields: FieldDefinition[]
+): string {
+  let modelContent = `import { Schema, model } from 'mongoose';\nimport { I${camelCaseName}, ${camelCaseName}Model } from './${folderName}.interface'; \n\n`;
+
+  // Generate nested schemas
+  const nestedSchemas = generateNestedSchemas(fields);
+  modelContent += nestedSchemas;
+
+  modelContent += `const ${folderName}Schema = new Schema<I${camelCaseName}, ${camelCaseName}Model>({\n`;
+
+  // Add fields to schema
+  if (fields.length > 0) {
+    fields.forEach((field) => {
+      let schemaType = mapToMongooseType(field);
+      let additionalProps = "";
+
+      // Add required property if marked as required
+      if (field.isRequired) {
+        additionalProps += ", required: true";
+      }
+
+      modelContent += `  ${field.name}: ${schemaType}${additionalProps},\n`;
+    });
+  } else {
+    modelContent += "  // Define schema fields here\n";
+  }
+
+  modelContent += `}, {\n  timestamps: true\n});\n\nexport const ${camelCaseName} = model<I${camelCaseName}, ${camelCaseName}Model>('${camelCaseName}', ${folderName}Schema);\n`;
+
+  return modelContent;
 }
 
 function generateValidationContent(

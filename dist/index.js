@@ -203,11 +203,11 @@ function mapToTypeScriptType(field) {
                     case "id":
                         return "Types.ObjectId[]";
                     default:
-                        return "any[]";
+                        return "string[]"; // Default to string[] instead of any[]
                 }
             }
             else {
-                return "any[]";
+                return "string[]"; // Default to string[] instead of any[]
             }
         case "object":
             if ((_c = field.objectProperties) === null || _c === void 0 ? void 0 : _c.length) {
@@ -226,61 +226,8 @@ function mapToTypeScriptType(field) {
         case "id":
             return "Types.ObjectId";
         default:
-            return "any";
+            return "string"; // Default to string instead of any
     }
-}
-// Update the model generation to handle complex nested structures
-function generateModelContent(camelCaseName, folderName, fields) {
-    let modelContent = `import { Schema, model } from 'mongoose';\nimport { I${camelCaseName}, ${camelCaseName}Model } from './${folderName}.interface'; \n\n`;
-    // Generate nested schemas
-    const nestedSchemas = generateNestedSchemas(fields);
-    modelContent += nestedSchemas;
-    modelContent += `const ${folderName}Schema = new Schema<I${camelCaseName}, ${camelCaseName}Model>({\n`;
-    // Add fields to schema
-    if (fields.length > 0) {
-        fields.forEach((field) => {
-            let schemaType = mapToMongooseType(field);
-            let additionalProps = "";
-            // Add required property if marked as required
-            if (field.isRequired) {
-                additionalProps += ", required: true";
-            }
-            modelContent += `  ${field.name}: ${schemaType}${additionalProps},\n`;
-        });
-    }
-    else {
-        modelContent += "  // Define schema fields here\n";
-    }
-    modelContent += `}, {\n  timestamps: true\n});\n\nexport const ${camelCaseName} = model<I${camelCaseName}, ${camelCaseName}Model>('${camelCaseName}', ${folderName}Schema);\n`;
-    return modelContent;
-}
-// Helper function to generate nested schemas
-function generateNestedSchemas(fields) {
-    let schemas = "";
-    fields.forEach((field) => {
-        var _a, _b;
-        if (field.type.toLowerCase() === "array" &&
-            ((_a = field.ref) === null || _a === void 0 ? void 0 : _a.toLowerCase()) === "object" &&
-            ((_b = field.objectProperties) === null || _b === void 0 ? void 0 : _b.length)) {
-            const nestedSchemaName = `${field.name}ItemSchema`;
-            schemas += `const ${nestedSchemaName} = new Schema({\n`;
-            // Add properties
-            field.objectProperties.forEach((prop) => {
-                let schemaType = mapToMongooseType(prop);
-                let additionalProps = "";
-                // Add required property if marked as required
-                if (prop.isRequired) {
-                    additionalProps += ", required: true";
-                }
-                schemas += `  ${prop.name}: ${schemaType}${additionalProps},\n`;
-            });
-            schemas += `}, { _id: false });\n\n`;
-            // Check for nested objects within this schema
-            const nestedSchemas = generateNestedSchemas(field.objectProperties);
-            schemas += nestedSchemas;
-        }
-    });
-    return schemas;
 }
 // Helper function to map field definitions to Mongoose schema types
 function mapToMongooseType(field) {
@@ -316,11 +263,11 @@ function mapToMongooseType(field) {
                     case "id":
                         return `{ type: [Schema.Types.ObjectId], ref: '${field.ref || "Document"}' }`;
                     default:
-                        return "{ type: [Schema.Types.Mixed] }";
+                        return "{ type: [String] }"; // Default to String instead of Mixed
                 }
             }
             else {
-                return "{ type: [Schema.Types.Mixed] }";
+                return "{ type: [String] }"; // Default to String instead of Mixed
             }
         case "object":
             if ((_c = field.objectProperties) === null || _c === void 0 ? void 0 : _c.length) {
@@ -340,8 +287,64 @@ function mapToMongooseType(field) {
                 ? `{ type: Schema.Types.ObjectId, ref: '${field.ref}' }`
                 : "{ type: Schema.Types.ObjectId }";
         default:
-            return "{ type: String }";
+            return "{ type: String }"; // Default to String instead of Mixed
     }
+}
+// Remove the second implementation of generateNestedInterfaces (around line 218)
+// Remove the second implementation of generateNestedSchemas (around line 300)
+// Remove the second implementation of mapToMongooseType (around line 350)
+// Helper function to generate nested schemas
+function generateNestedSchemas(fields) {
+    let schemas = "";
+    fields.forEach((field) => {
+        var _a, _b;
+        if (field.type.toLowerCase() === "array" &&
+            ((_a = field.ref) === null || _a === void 0 ? void 0 : _a.toLowerCase()) === "object" &&
+            ((_b = field.objectProperties) === null || _b === void 0 ? void 0 : _b.length)) {
+            const nestedSchemaName = `${field.name}ItemSchema`;
+            schemas += `const ${nestedSchemaName} = new Schema({\n`;
+            // Add properties
+            field.objectProperties.forEach((prop) => {
+                let schemaType = mapToMongooseType(prop);
+                let additionalProps = "";
+                // Add required property if marked as required
+                if (prop.isRequired) {
+                    additionalProps += ", required: true";
+                }
+                schemas += `  ${prop.name}: ${schemaType}${additionalProps},\n`;
+            });
+            schemas += `}, { _id: false });\n\n`;
+            // Check for nested objects within this schema
+            const nestedSchemas = generateNestedSchemas(field.objectProperties);
+            schemas += nestedSchemas;
+        }
+    });
+    return schemas;
+}
+// Update the model generation to handle complex nested structures
+function generateModelContent(camelCaseName, folderName, fields) {
+    let modelContent = `import { Schema, model } from 'mongoose';\nimport { I${camelCaseName}, ${camelCaseName}Model } from './${folderName}.interface'; \n\n`;
+    // Generate nested schemas
+    const nestedSchemas = generateNestedSchemas(fields);
+    modelContent += nestedSchemas;
+    modelContent += `const ${folderName}Schema = new Schema<I${camelCaseName}, ${camelCaseName}Model>({\n`;
+    // Add fields to schema
+    if (fields.length > 0) {
+        fields.forEach((field) => {
+            let schemaType = mapToMongooseType(field);
+            let additionalProps = "";
+            // Add required property if marked as required
+            if (field.isRequired) {
+                additionalProps += ", required: true";
+            }
+            modelContent += `  ${field.name}: ${schemaType}${additionalProps},\n`;
+        });
+    }
+    else {
+        modelContent += "  // Define schema fields here\n";
+    }
+    modelContent += `}, {\n  timestamps: true\n});\n\nexport const ${camelCaseName} = model<I${camelCaseName}, ${camelCaseName}Model>('${camelCaseName}', ${folderName}Schema);\n`;
+    return modelContent;
 }
 function generateValidationContent(camelCaseName, fields) {
     let validationContent = `import { z } from 'zod';\n\n`;

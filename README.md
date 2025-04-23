@@ -1,6 +1,6 @@
 # express-module-generator
 
-A command-line tool for generating Express.js modules with Mongoose models, controllers, services, and routes. Version: 1.1.3
+A command-line tool for generating Express.js modules with Mongoose models, controllers, services, and routes. Version: 1.1.4
 
 ## Features
 
@@ -12,6 +12,7 @@ A command-line tool for generating Express.js modules with Mongoose models, cont
 - Automatic Zod validation schema generation based on field definitions
 - Ability to skip specific file types during generation
 - Support for complex nested structures including arrays of objects and nested arrays
+- Improved array type handling (defaults to string arrays instead of any/mixed types)
 
 ## Installation
 
@@ -112,7 +113,7 @@ variants:array:object:name:string:price:number:color:string:size:string
 You can define arrays within objects:
 
 ```bash
-fieldName:array:object:propName1:propType1:propName2:array:itemType
+fieldName:array:object:propName1:propType1:propName2:array:string
 ```
 
 For example:
@@ -132,6 +133,18 @@ This will generate a Content module with:
 - An array of content items, each with a title and an array of descriptions
 - An image field
 - An array of videos
+
+### Array Type Handling
+
+By default, arrays are now typed as string arrays in both TypeScript interfaces and Mongoose schemas:
+
+```typescript
+// In interface file
+images: string[];  // Instead of any[]
+
+// In model file
+images: { type: [String] }  // Instead of Schema.Types.Mixed
+```
 
 ### Skipping File Types
 
@@ -153,7 +166,7 @@ npx create-module User name:string email:string age:number
 npx create-module Product name:string price:number category:objectId:Category
 
 # Create a Blog module with optional and required fields
-npx create-module Blog title!:string content:string author?:objectId:User tags:array
+npx create-module Blog title!:string content:string author?:objectId:User tags:array:string
 
 # Create a Product module with array of objects
 npx create-module Product name:string price:number variants:array:object:name:string:price:number:color:string:size:string
@@ -209,4 +222,10 @@ MIT
 
 ```
 
+The key updates to the README include:
+1. Updated version number to 1.1.4
+2. Added a new feature bullet point about improved array type handling
+3. Added a new section specifically about array type handling
+4. Updated the examples to show proper array type usage
+5. Made sure the documentation reflects the current behavior of the code
 ```
