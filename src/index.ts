@@ -19,12 +19,8 @@ interface FieldDefinition {
   ref?: string;
   isRequired?: boolean;
   isOptional?: boolean;
-  objectProperties?: {
-    name: string;
-    type: string;
-    isRequired?: boolean;
-    isOptional?: boolean;
-  }[];
+  objectProperties?: FieldDefinition[]; // Changed to support nested field definitions
+  arrayItemType?: string; // Type of items in an array
 }
 
 // Templates type
@@ -190,62 +186,16 @@ function generateInterfaceContent(
 ): string {
   let interfaceContent = `import { Model, Types } from 'mongoose';\n\n`;
 
-  // Add nested interfaces for array of objects
-  fields.forEach((field) => {
-    if (
-      field.type.toLowerCase() === "array" &&
-      field.ref?.toLowerCase() === "object" &&
-      field.objectProperties?.length
-    ) {
-      const nestedInterfaceName = `${toCamelCase(field.name)}Item`;
-      interfaceContent += `export interface ${nestedInterfaceName} {\n`;
-
-      // Add properties from the objectProperties array
-      field.objectProperties.forEach((prop) => {
-        let tsType = "string"; // Default type
-
-        // Map common MongoDB types to TypeScript types
-        switch (prop.type.toLowerCase()) {
-          case "string":
-            tsType = "string";
-            break;
-          case "number":
-            tsType = "number";
-            break;
-          case "boolean":
-            tsType = "boolean";
-            break;
-          case "date":
-            tsType = "Date";
-            break;
-          case "array":
-            tsType = "any[]";
-            break;
-          case "object":
-            tsType = "Record<string, any>";
-            break;
-          case "objectid":
-          case "id":
-            tsType = "Types.ObjectId";
-            break;
-          default:
-            tsType = "any";
-        }
-
-        const optionalMarker = prop.isOptional ? "?" : "";
-        interfaceContent += `  ${prop.name}${optionalMarker}: ${tsType};\n`;
-      });
-
-      interfaceContent += `}\n\n`;
-    }
-  });
+  // Generate nested interfaces for complex types
+  const nestedInterfaces = generateNestedInterfaces(fields);
+  interfaceContent += nestedInterfaces;
 
   interfaceContent += `export type I${camelCaseName} = {\n`;
 
   // Add fields to interface
   if (fields.length > 0) {
     fields.forEach((field) => {
-      let tsType = mapToTypeScriptType(field.type, field);
+      let tsType = mapToTypeScriptType(field);
 
       // Add optional marker to the interface field if needed
       const optionalMarker = field.isOptional ? "?" : "";
@@ -260,9 +210,40 @@ function generateInterfaceContent(
   return interfaceContent;
 }
 
-// Helper function to map types to TypeScript types
-function mapToTypeScriptType(type: string, field?: FieldDefinition): string {
-  switch (type.toLowerCase()) {
+// Helper function to generate nested interfaces
+function generateNestedInterfaces(fields: FieldDefinition[]): string {
+  let interfaces = "";
+
+  fields.forEach((field) => {
+    if (
+      field.type.toLowerCase() === "array" &&
+      field.ref?.toLowerCase() === "object" &&
+      field.objectProperties?.length
+    ) {
+      const nestedInterfaceName = `${toCamelCase(field.name)}Item`;
+      interfaces += `export interface ${nestedInterfaceName} {\n`;
+
+      // Add properties
+      field.objectProperties.forEach((prop) => {
+        let tsType = mapToTypeScriptType(prop);
+        const optionalMarker = prop.isOptional ? "?" : "";
+        interfaces += `  ${prop.name}${optionalMarker}: ${tsType};\n`;
+      });
+
+      interfaces += `}\n\n`;
+
+      // Check for nested objects within this interface
+      const nestedInterfaces = generateNestedInterfaces(field.objectProperties);
+      interfaces += nestedInterfaces;
+    }
+  });
+
+  return interfaces;
+}
+
+// Helper function to map field definitions to TypeScript types
+function mapToTypeScriptType(field: FieldDefinition): string {
+  switch (field.type.toLowerCase()) {
     case "string":
       return "string";
     case "number":
@@ -272,24 +253,47 @@ function mapToTypeScriptType(type: string, field?: FieldDefinition): string {
     case "date":
       return "Date";
     case "array":
-      // If it's an array with a reference
-      if (field?.ref) {
-        if (
-          field.ref.toLowerCase() === "object" &&
-          field.objectProperties?.length
-        ) {
-          // Array of objects with defined structure
-          const nestedInterfaceName = `${toCamelCase(field.name)}Item`;
-          return `${nestedInterfaceName}[]`;
-        } else {
-          // Array of references to other models
-          return `Types.ObjectId[]`;
+      if (
+        field.ref?.toLowerCase() === "object" &&
+        field.objectProperties?.length
+      ) {
+        // Array of objects with defined structure
+        const nestedInterfaceName = `${toCamelCase(field.name)}Item`;
+        return `${nestedInterfaceName}[]`;
+      } else if (field.arrayItemType) {
+        // Array with specified item type
+        switch (field.arrayItemType.toLowerCase()) {
+          case "string":
+            return "string[]";
+          case "number":
+            return "number[]";
+          case "boolean":
+            return "boolean[]";
+          case "date":
+            return "Date[]";
+          case "objectid":
+          case "id":
+            return "Types.ObjectId[]";
+          default:
+            return "any[]";
         }
       } else {
         return "any[]";
       }
     case "object":
-      return "Record<string, any>";
+      if (field.objectProperties?.length) {
+        // Object with defined properties
+        return `{ ${field.objectProperties
+          .map((prop) => {
+            const optionalMarker = prop.isOptional ? "?" : "";
+            return `${prop.name}${optionalMarker}: ${mapToTypeScriptType(
+              prop
+            )}`;
+          })
+          .join("; ")} }`;
+      } else {
+        return "Record<string, any>";
+      }
     case "objectid":
     case "id":
       return "Types.ObjectId";
@@ -298,6 +302,7 @@ function mapToTypeScriptType(type: string, field?: FieldDefinition): string {
   }
 }
 
+// Update the model generation to handle complex nested structures
 function generateModelContent(
   camelCaseName: string,
   folderName: string,
@@ -305,66 +310,16 @@ function generateModelContent(
 ): string {
   let modelContent = `import { Schema, model } from 'mongoose';\nimport { I${camelCaseName}, ${camelCaseName}Model } from './${folderName}.interface'; \n\n`;
 
-  // Add nested schemas for array of objects
-  fields.forEach((field) => {
-    if (
-      field.type.toLowerCase() === "array" &&
-      field.ref?.toLowerCase() === "object" &&
-      field.objectProperties?.length
-    ) {
-      const nestedSchemaName = `${field.name}ItemSchema`;
-      modelContent += `const ${nestedSchemaName} = new Schema({\n`;
-
-      // Add properties from the objectProperties array
-      field.objectProperties.forEach((prop) => {
-        let schemaType = "String"; // Default type
-        let additionalProps = "";
-
-        // Map to Mongoose schema types
-        switch (prop.type.toLowerCase()) {
-          case "string":
-            schemaType = "String";
-            break;
-          case "number":
-            schemaType = "Number";
-            break;
-          case "boolean":
-            schemaType = "Boolean";
-            break;
-          case "date":
-            schemaType = "Date";
-            break;
-          case "array":
-            schemaType = "[Schema.Types.Mixed]";
-            break;
-          case "object":
-            schemaType = "Schema.Types.Mixed";
-            break;
-          case "objectid":
-          case "id":
-            break;
-          default:
-            schemaType = "String";
-        }
-
-        // Add required property if marked as required
-        if (prop.isRequired) {
-          additionalProps += ", required: true";
-        }
-
-        modelContent += `  ${prop.name}: { type: ${schemaType}${additionalProps} },\n`;
-      });
-
-      modelContent += `}, { _id: false });\n\n`;
-    }
-  });
+  // Generate nested schemas
+  const nestedSchemas = generateNestedSchemas(fields);
+  modelContent += nestedSchemas;
 
   modelContent += `const ${folderName}Schema = new Schema<I${camelCaseName}, ${camelCaseName}Model>({\n`;
 
   // Add fields to schema
   if (fields.length > 0) {
     fields.forEach((field) => {
-      let schemaType = mapToMongooseType(field.type, field);
+      let schemaType = mapToMongooseType(field);
       let additionalProps = "";
 
       // Add required property if marked as required
@@ -372,7 +327,7 @@ function generateModelContent(
         additionalProps += ", required: true";
       }
 
-      modelContent += `  ${field.name}: { type: ${schemaType}${additionalProps} },\n`;
+      modelContent += `  ${field.name}: ${schemaType}${additionalProps},\n`;
     });
   } else {
     modelContent += "  // Define schema fields here\n";
@@ -383,40 +338,102 @@ function generateModelContent(
   return modelContent;
 }
 
-// Helper function to map types to Mongoose schema types
-function mapToMongooseType(type: string, field?: FieldDefinition): string {
-  switch (type.toLowerCase()) {
+// Helper function to generate nested schemas
+function generateNestedSchemas(fields: FieldDefinition[]): string {
+  let schemas = "";
+
+  fields.forEach((field) => {
+    if (
+      field.type.toLowerCase() === "array" &&
+      field.ref?.toLowerCase() === "object" &&
+      field.objectProperties?.length
+    ) {
+      const nestedSchemaName = `${field.name}ItemSchema`;
+      schemas += `const ${nestedSchemaName} = new Schema({\n`;
+
+      // Add properties
+      field.objectProperties.forEach((prop) => {
+        let schemaType = mapToMongooseType(prop);
+        let additionalProps = "";
+
+        // Add required property if marked as required
+        if (prop.isRequired) {
+          additionalProps += ", required: true";
+        }
+
+        schemas += `  ${prop.name}: ${schemaType}${additionalProps},\n`;
+      });
+
+      schemas += `}, { _id: false });\n\n`;
+
+      // Check for nested objects within this schema
+      const nestedSchemas = generateNestedSchemas(field.objectProperties);
+      schemas += nestedSchemas;
+    }
+  });
+
+  return schemas;
+}
+
+// Helper function to map field definitions to Mongoose schema types
+function mapToMongooseType(field: FieldDefinition): string {
+  switch (field.type.toLowerCase()) {
     case "string":
-      return "String";
+      return "{ type: String }";
     case "number":
-      return "Number";
+      return "{ type: Number }";
     case "boolean":
-      return "Boolean";
+      return "{ type: Boolean }";
     case "date":
-      return "Date";
+      return "{ type: Date }";
     case "array":
-      if (field?.ref) {
-        if (
-          field.ref.toLowerCase() === "object" &&
-          field.objectProperties?.length
-        ) {
-          // Array of objects with defined structure
-          const nestedSchemaName = `${field.name}ItemSchema`;
-          return `[${nestedSchemaName}]`;
-        } else {
-          // Array of references to other models
-          return "[Schema.Types.ObjectId]";
+      if (
+        field.ref?.toLowerCase() === "object" &&
+        field.objectProperties?.length
+      ) {
+        // Array of objects with defined structure
+        const nestedSchemaName = `${field.name}ItemSchema`;
+        return `[${nestedSchemaName}]`;
+      } else if (field.arrayItemType) {
+        // Array with specified item type
+        switch (field.arrayItemType.toLowerCase()) {
+          case "string":
+            return "{ type: [String] }";
+          case "number":
+            return "{ type: [Number] }";
+          case "boolean":
+            return "{ type: [Boolean] }";
+          case "date":
+            return "{ type: [Date] }";
+          case "objectid":
+          case "id":
+            return `{ type: [Schema.Types.ObjectId], ref: '${
+              field.ref || "Document"
+            }' }`;
+          default:
+            return "{ type: [Schema.Types.Mixed] }";
         }
       } else {
-        return "[Schema.Types.Mixed]";
+        return "{ type: [Schema.Types.Mixed] }";
       }
     case "object":
-      return "Schema.Types.Mixed";
+      if (field.objectProperties?.length) {
+        // Object with defined properties
+        return `{ ${field.objectProperties
+          .map((prop) => {
+            return `${prop.name}: ${mapToMongooseType(prop)}`;
+          })
+          .join(", ")} }`;
+      } else {
+        return "{ type: Schema.Types.Mixed }";
+      }
     case "objectid":
     case "id":
-      return "Schema.Types.ObjectId";
+      return field.ref
+        ? `{ type: Schema.Types.ObjectId, ref: '${field.ref}' }`
+        : "{ type: Schema.Types.ObjectId }";
     default:
-      return "String";
+      return "{ type: String }";
   }
 }
 

@@ -1,6 +1,6 @@
-# module-generator
+# express-module-generator
 
-A command-line tool for generating Express.js modules with Mongoose models, controllers, services, and routes. Version: 1.0.7
+A command-line tool for generating Express.js modules with Mongoose models, controllers, services, and routes. Version: 1.1.3
 
 ## Features
 
@@ -11,7 +11,7 @@ A command-line tool for generating Express.js modules with Mongoose models, cont
 - Configurable through package.json or command-line options
 - Automatic Zod validation schema generation based on field definitions
 - Ability to skip specific file types during generation
-- Support for complex array of objects with defined properties
+- Support for complex nested structures including arrays of objects and nested arrays
 
 ## Installation
 
@@ -91,9 +91,11 @@ Fields follow this syntax: `fieldName:type:reference`
 - Add `?` after the field name to mark it as optional: `email?:string`
 - Add `!` after the field name to mark it as required: `email!:string`
 
-### Array of Objects with Properties
+### Complex Nested Structures
 
-You can define arrays of objects with specific properties using this syntax:
+You can define complex nested structures including arrays of objects and nested arrays:
+
+#### Array of Objects
 
 ```bash
 fieldName:array:object:propName1:propType1:propName2:propType2...
@@ -105,11 +107,31 @@ For example:
 variants:array:object:name:string:price:number:color:string:size:string
 ```
 
-You can also mark object properties as optional or required:
+#### Nested Arrays
+
+You can define arrays within objects:
 
 ```bash
-variants:array:object:name:string:price:number:color?:string:size!:string
+fieldName:array:object:propName1:propType1:propName2:array:itemType
 ```
+
+For example:
+
+```bash
+content:array:object:title:string:descriptions:array:string
+```
+
+#### Complex Example
+
+```bash
+npx create-module Content content:array:object:title:string:descriptions:array:string image:string videos:array:string
+```
+
+This will generate a Content module with:
+
+- An array of content items, each with a title and an array of descriptions
+- An image field
+- An array of videos
 
 ### Skipping File Types
 
@@ -135,6 +157,9 @@ npx create-module Blog title!:string content:string author?:objectId:User tags:a
 
 # Create a Product module with array of objects
 npx create-module Product name:string price:number variants:array:object:name:string:price:number:color:string:size:string
+
+# Create a Content module with complex nested structure
+npx create-module Content content:array:object:title:string:descriptions:array:string image:string videos:array:string
 
 # Create a Comment module but skip certain files
 npx create-module Comment text:string author:objectId:User --skip constants validation
