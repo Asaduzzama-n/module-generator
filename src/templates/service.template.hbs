@@ -1,0 +1,40 @@
+import { Types } from 'mongoose';
+import { I{{camelCaseName}} } from './{{folderName}}.interface';
+import { {{camelCaseName}} } from './{{folderName}}.model';
+
+const create{{camelCaseName}} = async (payload: I{{camelCaseName}}) => {
+  const result = await {{camelCaseName}}.create(payload);
+  return result;
+};
+
+const update{{camelCaseName}} = async (id: string, payload: Partial<I{{camelCaseName}}>) => {
+  const result = await {{camelCaseName}}.findByIdAndUpdate(id, payload, { new: true });
+  return result;
+};
+
+const getSingle{{camelCaseName}} = async (id: string) => {
+  const result = await {{camelCaseName}}.findById(id);
+  return result;
+};
+
+const getAll{{camelCaseName}}s = async ({{#if hasParentId}}parentId: Types.ObjectId{{/if}}) => {
+  {{#if hasParentId}}
+  const result = await {{camelCaseName}}.find({ {{parentField}}: parentId });
+  {{else}}
+  const result = await {{camelCaseName}}.find();
+  {{/if}}
+  return result;
+};
+
+const delete{{camelCaseName}} = async (id: string) => {
+  const result = await {{camelCaseName}}.findByIdAndDelete(id);
+  return result;
+};
+
+export const {{camelCaseName}}Services = {
+  create{{camelCaseName}},
+  update{{camelCaseName}},
+  getSingle{{camelCaseName}},
+  getAll{{camelCaseName}}s,
+  delete{{camelCaseName}},
+};

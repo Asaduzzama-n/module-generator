@@ -1,41 +1,59 @@
-# express-module-generator
+# Express Module Generator
 
-A command-line tool for generating Express.js modules with Mongoose models, controllers, services, and routes. Version: 1.1.4
+A powerful CLI tool for generating Express.js + Mongoose modules with TypeScript support. Quickly scaffold complete CRUD modules with proper type definitions, validation, and file handling.
 
 ## Features
 
-- Generate complete module structure with a single command
-- Create TypeScript interfaces, Mongoose models, controllers, services, and routes
-- Automatically register new routes in your central router file
-- Support for custom field definitions with various data types
-- Configurable through package.json or command-line options
-- Automatic Zod validation schema generation based on field definitions
-- Ability to skip specific file types during generation
-- Support for complex nested structures including arrays of objects and nested arrays
-- Improved array type handling (defaults to string arrays instead of any/mixed types)
+- 🚀 Generate complete module structure with a single command
+- 📝 TypeScript-first approach with proper type definitions
+- 🔄 Automatic CRUD operations with proper error handling
+- 🔍 Built-in Zod validation schema generation
+- 📁 Smart file upload handling for image and media fields
+- 🔗 Automatic route registration in central router
+- 🎯 Support for complex data structures (nested objects, arrays)
+- ⚙️ Highly configurable via package.json or CLI options
+- 🛡️ Built-in request validation middleware
+- 🎨 Clean and consistent code structure
 
 ## Installation
 
-### Global Installation
-
 ```bash
-npm install -g express-module-generator
+npm install express-module-generator --global
 ```
 
-### Local Installation
+Or use with npx:
 
 ```bash
-npm install --save-dev express-module-generator
+npx express-module-generator
+```
+
+## Quick Start
+
+Generate a basic module:
+
+```bash
+create-module User name:string email:string age:number
+```
+
+This creates:
+
+```
+src/app/modules/user/
+├── user.interface.ts   // TypeScript interfaces
+├── user.model.ts      // Mongoose model
+├── user.controller.ts // CRUD controllers
+├── user.service.ts    // Business logic
+├── user.route.ts      // Express routes
+├── user.validation.ts // Zod validation
+└── user.constants.ts  // Constants
 ```
 
 ## Configuration
 
-You can configure the module generator by adding a `moduleGenerator` section to your `package.json`:
+### Via package.json
 
 ```json
 {
-  "name": "your-project",
-  "version": "1.0.0",
   "moduleGenerator": {
     "modulesDir": "src/app/modules",
     "routesFile": "src/routes/index.ts"
@@ -43,178 +61,147 @@ You can configure the module generator by adding a `moduleGenerator` section to 
 }
 ```
 
-### Configuration Options
-
-| Option       | Description                             | Default               |
-| ------------ | --------------------------------------- | --------------------- |
-| `modulesDir` | Directory where modules will be created | `src/app/modules`     |
-| `routesFile` | Path to the central router file         | `src/routes/index.ts` |
-
-## Usage
-
-### Basic Usage
+### Via CLI
 
 ```bash
-npx create-module User
+create-module User --modules-dir src/modules --routes-file src/routes.ts
 ```
 
-This will create a new module named "User" with the following structure:
+## Field Types
 
-```
-src/app/modules/user/
-├── user.interface.ts
-├── user.model.ts
-├── user.controller.ts
-├── user.service.ts
-├── user.route.ts
-├── user.validation.ts
-└── user.constants.ts
-```
+### Basic Types
 
-### Adding Fields
+- `string` - Text fields
+- `number` - Numeric fields
+- `boolean` - Boolean fields
+- `date` - Date fields
+- `objectid` - MongoDB ObjectId
 
-You can define fields for your model by adding them as arguments:
+### Advanced Types
+
+- `array` - Array fields
+- `object` - Nested objects
+
+### Modifiers
+
+- Required: `fieldName!:type`
+- Optional: `fieldName?:type`
+- Reference: `fieldName:objectid:ModelName`
+
+## Examples
+
+### Basic CRUD Module
 
 ```bash
-npx create-module User name:string email:string age:number isActive:boolean
+create-module Product name!:string price!:number description?:string
 ```
 
-### Field Definition Syntax
-
-Fields follow this syntax: `fieldName:type:reference`
-
-- `fieldName`: The name of the field
-- `type`: The data type (string, number, boolean, date, array, object, objectId)
-- `reference` (optional): For ObjectId fields, the referenced model name
-
-#### Optional and Required Fields
-
-- Add `?` after the field name to mark it as optional: `email?:string`
-- Add `!` after the field name to mark it as required: `email!:string`
-
-### Complex Nested Structures
-
-You can define complex nested structures including arrays of objects and nested arrays:
-
-#### Array of Objects
+### With File Uploads
 
 ```bash
-fieldName:array:object:propName1:propType1:propName2:propType2...
+create-module Profile name:string avatar:string photos:array:string
 ```
 
-For example:
+### With References
 
 ```bash
-variants:array:object:name:string:price:number:color:string:size:string
+create-module Order user:objectid:User products:array:objectid:Product
 ```
 
-#### Nested Arrays
-
-You can define arrays within objects:
+### Complex Nested Structure
 
 ```bash
-fieldName:array:object:propName1:propType1:propName2:array:string
+create-module Survey title:string questions:array:object:text:string:options:array:string
 ```
 
-For example:
+### Skip Specific Files
 
 ```bash
-content:array:object:title:string:descriptions:array:string
+create-module User name:string --skip validation constants
 ```
 
-#### Complex Example
+## Generated Code Features
+
+### Controllers
+
+- Full CRUD operations
+- File upload handling
+- Proper error handling
+- Response formatting
+
+### Services
+
+- Database operations
+- File management
+- Business logic separation
+- Type-safe operations
+
+### Routes
+
+- RESTful endpoints
+- Validation middleware
+- File upload middleware
+- Authentication hooks
+
+### Validation
+
+- Request body validation
+- Type checking
+- Custom error messages
+- Required/optional fields
+
+## API Endpoints
+
+For a module named "Product":
+
+```
+POST   /api/v1/products      - Create product
+GET    /api/v1/products      - Get all products
+GET    /api/v1/products/:id  - Get single product
+PATCH  /api/v1/products/:id  - Update product
+DELETE /api/v1/products/:id  - Delete product
+```
+
+## Best Practices
+
+1. Use singular names for modules (e.g., "User" not "Users")
+2. Mark required fields with "!"
+3. Use descriptive field names
+4. Follow naming conventions for file fields (image, file, media)
+
+## Common Patterns
+
+### File Upload Module
 
 ```bash
-npx create-module Content content:array:object:title:string:descriptions:array:string image:string videos:array:string
+create-module Media title:string description:string file:string type:string
 ```
 
-This will generate a Content module with:
-
-- An array of content items, each with a title and an array of descriptions
-- An image field
-- An array of videos
-
-### Array Type Handling
-
-By default, arrays are now typed as string arrays in both TypeScript interfaces and Mongoose schemas:
-
-```typescript
-// In interface file
-images: string[];  // Instead of any[]
-
-// In model file
-images: { type: [String] }  // Instead of Schema.Types.Mixed
-```
-
-### Skipping File Types
-
-You can skip generating specific file types by using the `--skip` flag followed by the file types:
+### Parent-Child Relationship
 
 ```bash
-npx create-module User name:string email:string --skip validation route
+create-module Comment text:string post:objectid:Post user:objectid:User
 ```
 
-This will skip generating the validation and route files for the module.
-
-### Examples
+### Nested Data Structure
 
 ```bash
-# Create a User module with basic fields
-npx create-module User name:string email:string age:number
-
-# Create a Product module with references
-npx create-module Product name:string price:number category:objectId:Category
-
-# Create a Blog module with optional and required fields
-npx create-module Blog title!:string content:string author?:objectId:User tags:array:string
-
-# Create a Product module with array of objects
-npx create-module Product name:string price:number variants:array:object:name:string:price:number:color:string:size:string
-
-# Create a Content module with complex nested structure
-npx create-module Content content:array:object:title:string:descriptions:array:string image:string videos:array:string
-
-# Create a Comment module but skip certain files
-npx create-module Comment text:string author:objectId:User --skip constants validation
+create-module Form fields:array:object:label:string:type:string:required:boolean
 ```
 
-### Command-line Options
+## Error Handling
 
-You can override configuration options using command-line flags:
+The generator includes built-in error handling for:
 
-```bash
-npx create-module User --modules-dir src/modules --routes-file src/api/routes.ts
-```
+- Database operations
+- File uploads
+- Validation errors
+- Not found errors
+- Authorization errors
 
-## Generated Files
+## Contributing
 
-### Interface (.interface.ts)
-
-Contains TypeScript interfaces for your model and any nested types.
-
-### Model (.model.ts)
-
-Contains the Mongoose schema and model definition.
-
-### Controller (.controller.ts)
-
-Contains controller functions for handling HTTP requests.
-
-### Service (.service.ts)
-
-Contains business logic and database operations.
-
-### Route (.route.ts)
-
-Contains Express router definitions for the module.
-
-### Validation (.validation.ts)
-
-Contains Zod validation schemas for request validation, automatically generated based on your field definitions.
-
-### Constants (.constants.ts)
-
-Contains constants related to the module.
+Contributions are welcome! Please read our contributing guidelines for details.
 
 ## License
 
@@ -222,10 +209,12 @@ MIT
 
 ```
 
-The key updates to the README include:
-1. Updated version number to 1.1.4
-2. Added a new feature bullet point about improved array type handling
-3. Added a new section specifically about array type handling
-4. Updated the examples to show proper array type usage
-5. Made sure the documentation reflects the current behavior of the code
+This README now provides:
+1. Clear feature overview
+2. Detailed usage examples
+3. Configuration options
+4. Field type documentation
+5. Generated code explanation
+6. Common patterns and best practices
+7. Error handling information
 ```

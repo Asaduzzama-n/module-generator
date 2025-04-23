@@ -1,0 +1,36 @@
+import express from 'express';
+import { {{camelCaseName}}Controller } from './{{folderName}}.controller';
+import validateRequest from '../../../middlewares/validateRequest';
+import { {{camelCaseName}}Validations } from './{{folderName}}.validation';
+
+const router = express.Router();
+
+{{#if hasParentId}}
+router.get('/:id', {{camelCaseName}}Controller.getAll{{camelCaseName}}s);
+{{else}}
+router.get('/', {{camelCaseName}}Controller.getAll{{camelCaseName}}s);
+{{/if}}
+
+router.post(
+  '/',
+  {{#if hasFileFields}}
+  uploadMultiple,
+  {{/if}}
+  validateRequest({{camelCaseName}}Validations.create),
+  {{camelCaseName}}Controller.create{{camelCaseName}},
+);
+
+router.get('/:id', {{camelCaseName}}Controller.getSingle{{camelCaseName}});
+
+router.patch(
+  '/:id',
+  {{#if hasFileFields}}
+  uploadMultiple,
+  {{/if}}
+  validateRequest({{camelCaseName}}Validations.update),
+  {{camelCaseName}}Controller.update{{camelCaseName}},
+);
+
+router.delete('/:id', {{camelCaseName}}Controller.delete{{camelCaseName}});
+
+export const {{camelCaseName}}Routes = router;

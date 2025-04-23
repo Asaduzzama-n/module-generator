@@ -1,0 +1,100 @@
+import { Request, Response } from 'express';
+import { {{camelCaseName}}Services } from './{{folderName}}.service';
+import catchAsync from '../../../shared/catchAsync';
+import sendResponse from '../../../shared/sendResponse';
+import { StatusCodes } from 'http-status-codes';
+import { Types } from 'mongoose';
+
+const create{{camelCaseName}} = catchAsync(async (req: Request, res: Response) => {
+  {{#if hasFileFields}}
+  const { {{#each fileFields}}{{this.name}}{{#unless @last}}, {{/unless}}{{/each}}...{{camelCaseNameLower}}Data } = req.body;
+  {{#each fileFields}}
+  if ({{this.name}}?.length > 0) {
+    {{../camelCaseNameLower}}Data.{{this.arrayName}} = {{this.name}};
+  }
+  {{/each}}
+  {{else}}
+  const {{camelCaseNameLower}}Data = req.body;
+  {{/if}}
+  
+  const result = await {{camelCaseName}}Services.create{{camelCaseName}}({{camelCaseNameLower}}Data);
+  
+  sendResponse(res, {
+    statusCode: StatusCodes.CREATED,
+    success: true,
+    message: '{{camelCaseName}} created successfully',
+    data: result,
+  });
+});
+
+const update{{camelCaseName}} = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  {{#if hasFileFields}}
+  const { {{#each fileFields}}{{this.name}}{{#unless @last}}, {{/unless}}{{/each}}...{{camelCaseNameLower}}Data } = req.body;
+  {{#each fileFields}}
+  if ({{this.name}}?.length > 0) {
+    {{../camelCaseNameLower}}Data.{{this.arrayName}} = {{this.name}};
+  }
+  {{/each}}
+  {{else}}
+  const {{camelCaseNameLower}}Data = req.body;
+  {{/if}}
+  
+  const result = await {{camelCaseName}}Services.update{{camelCaseName}}(id, {{camelCaseNameLower}}Data);
+  
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: '{{camelCaseName}} updated successfully',
+    data: result,
+  });
+});
+
+const getSingle{{camelCaseName}} = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await {{camelCaseName}}Services.getSingle{{camelCaseName}}(id);
+  
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: '{{camelCaseName}} retrieved successfully',
+    data: result,
+  });
+});
+
+const getAll{{camelCaseName}}s = catchAsync(async (req: Request, res: Response) => {
+  {{#if hasParentId}}
+  const result = await {{camelCaseName}}Services.getAll{{camelCaseName}}s(
+    new Types.ObjectId(req.params.id),
+  );
+  {{else}}
+  const result = await {{camelCaseName}}Services.getAll{{camelCaseName}}s();
+  {{/if}}
+  
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: '{{camelCaseName}}s retrieved successfully',
+    data: result,
+  });
+});
+
+const delete{{camelCaseName}} = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await {{camelCaseName}}Services.delete{{camelCaseName}}(id);
+  
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: '{{camelCaseName}} deleted successfully',
+    data: result,
+  });
+});
+
+export const {{camelCaseName}}Controller = {
+  create{{camelCaseName}},
+  update{{camelCaseName}},
+  getSingle{{camelCaseName}},
+  getAll{{camelCaseName}}s,
+  delete{{camelCaseName}},
+};

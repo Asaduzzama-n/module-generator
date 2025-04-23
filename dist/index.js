@@ -1,12 +1,47 @@
 #!/usr/bin/env node
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
 const commander_1 = require("commander");
+// Make sure these imports are at the top of the file
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
+const handlebars_1 = __importDefault(require("handlebars"));
 // Default configuration
 const defaultConfig = {
     modulesDir: "src/app/modules",
@@ -15,9 +50,9 @@ const defaultConfig = {
 // Load configuration from package.json or use defaults
 function loadConfig() {
     try {
-        const packageJsonPath = path_1.default.join(process.cwd(), "package.json");
-        if (fs_1.default.existsSync(packageJsonPath)) {
-            const packageJson = JSON.parse(fs_1.default.readFileSync(packageJsonPath, "utf-8"));
+        const packageJsonPath = path.join(process.cwd(), "package.json");
+        if (fs.existsSync(packageJsonPath)) {
+            const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
             const config = packageJson.moduleGenerator || {};
             return {
                 modulesDir: config.modulesDir || defaultConfig.modulesDir,
@@ -484,26 +519,27 @@ function main() {
         process.exit(1);
     }
 }
-// Make sure the createModule function is properly implemented
+// Update the createModule function to use the template-based content generators
 function createModule(name, fields, skipFiles, config) {
     const camelCaseName = toCamelCase(name);
     const folderName = camelCaseName.toLowerCase();
-    const folderPath = path_1.default.join(process.cwd(), config.modulesDir, folderName);
+    const folderPath = path.join(process.cwd(), config.modulesDir, folderName);
     // Check if the folder already exists
-    if (!fs_1.default.existsSync(folderPath)) {
-        fs_1.default.mkdirSync(folderPath, { recursive: true });
+    if (!fs.existsSync(folderPath)) {
+        fs.mkdirSync(folderPath, { recursive: true });
         console.log(`Created folder: ${folderName}`);
     }
     else {
         console.log(`Folder ${folderName} already exists.`);
         return;
     }
+    // Generate content using template-based generators
     const templates = {
         interface: generateInterfaceContent(camelCaseName, fields),
         model: generateModelContent(camelCaseName, folderName, fields),
-        controller: `import { Request, Response, NextFunction } from 'express';\nimport { ${camelCaseName}Services } from './${folderName}.service';\n\nexport const ${camelCaseName}Controller = { };\n`,
-        service: `import { I${camelCaseName} } from './${folderName}.interface';\n\nimport { ${camelCaseName} } from './${folderName}.model';\n\nexport const ${camelCaseName}Services = { };\n`,
-        route: `import express from 'express';\nimport { ${camelCaseName}Controller } from './${folderName}.controller';\n\nconst router = express.Router();\n \n\nexport const ${camelCaseName}Routes = router;\n`,
+        controller: generateControllerContent(camelCaseName, folderName, fields),
+        service: generateServiceContent(camelCaseName, folderName, fields),
+        route: generateRouteContent(camelCaseName, folderName, fields),
         validation: generateValidationContent(camelCaseName, fields),
         constants: `export const ${camelCaseName.toUpperCase()}_CONSTANT = 'someValue';\n`,
     };
@@ -514,8 +550,8 @@ function createModule(name, fields, skipFiles, config) {
             console.log(`Skipping file: ${folderName}.${key}.ts`);
             return;
         }
-        const filePath = path_1.default.join(folderPath, `${folderName}.${key}.ts`);
-        fs_1.default.writeFileSync(filePath, content);
+        const filePath = path.join(folderPath, `${folderName}.${key}.ts`);
+        fs.writeFileSync(filePath, content);
         console.log(`Created file: ${filePath}`);
     });
     // Add the new module to the central router file
@@ -523,14 +559,14 @@ function createModule(name, fields, skipFiles, config) {
 }
 // Make sure the updateRouterFile function is properly implemented
 function updateRouterFile(folderName, camelCaseName, config) {
-    const routerFilePath = path_1.default.join(process.cwd(), config.routesFile);
+    const routerFilePath = path.join(process.cwd(), config.routesFile);
     // Check if the router file exists
-    if (!fs_1.default.existsSync(routerFilePath)) {
+    if (!fs.existsSync(routerFilePath)) {
         console.warn(`Router file not found: ${routerFilePath}`);
         return;
     }
     try {
-        let routerContent = fs_1.default.readFileSync(routerFilePath, "utf-8");
+        let routerContent = fs.readFileSync(routerFilePath, "utf-8");
         // Check if the import already exists
         const importStatement = `import { ${camelCaseName}Routes } from '../app/modules/${folderName}/${folderName}.route'`;
         if (!routerContent.includes(importStatement)) {
@@ -584,7 +620,7 @@ function updateRouterFile(folderName, camelCaseName, config) {
             }
         }
         // Write the updated content back to the file
-        fs_1.default.writeFileSync(routerFilePath, routerContent);
+        fs.writeFileSync(routerFilePath, routerContent);
         console.log(`Updated router file: ${routerFilePath}`);
     }
     catch (error) {
@@ -593,3 +629,253 @@ function updateRouterFile(folderName, camelCaseName, config) {
 }
 // Call the main function to start the CLI
 main();
+// Update the controller generation function
+function generateControllerContent(camelCaseName, folderName, fields) {
+    try {
+        // First try to find the template in the current directory
+        let templatePath = path.join(__dirname, "templates", "controller.template.hbs");
+        // If not found, try looking in the src directory (for development)
+        if (!fs.existsSync(templatePath)) {
+            templatePath = path.join(process.cwd(), "src", "templates", "controller.template.hbs");
+        }
+        if (!fs.existsSync(templatePath)) {
+            console.error(`Controller template file not found: ${templatePath}`);
+            // Fallback to basic controller if template not found
+            return `import { Request, Response } from 'express';
+import { ${camelCaseName}Services } from './${folderName}.service';
+import catchAsync from '../../../shared/catchAsync';
+import sendResponse from '../../../shared/sendResponse';
+import { StatusCodes } from 'http-status-codes';
+
+const create${camelCaseName} = catchAsync(async (req: Request, res: Response) => {
+  const ${folderName}Data = req.body;
+  const result = await ${camelCaseName}Services.create${camelCaseName}(${folderName}Data);
+  
+  sendResponse(res, {
+    statusCode: StatusCodes.CREATED,
+    success: true,
+    message: '${camelCaseName} created successfully',
+    data: result,
+  });
+});
+
+const update${camelCaseName} = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const ${folderName}Data = req.body;
+  const result = await ${camelCaseName}Services.update${camelCaseName}(id, ${folderName}Data);
+  
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: '${camelCaseName} updated successfully',
+    data: result,
+  });
+});
+
+const getSingle${camelCaseName} = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await ${camelCaseName}Services.getSingle${camelCaseName}(id);
+  
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: '${camelCaseName} retrieved successfully',
+    data: result,
+  });
+});
+
+const getAll${camelCaseName}s = catchAsync(async (req: Request, res: Response) => {
+  const result = await ${camelCaseName}Services.getAll${camelCaseName}s();
+  
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: '${camelCaseName}s retrieved successfully',
+    data: result,
+  });
+});
+
+const delete${camelCaseName} = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await ${camelCaseName}Services.delete${camelCaseName}(id);
+  
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: '${camelCaseName} deleted successfully',
+    data: result,
+  });
+});
+
+export const ${camelCaseName}Controller = {
+  create${camelCaseName},
+  update${camelCaseName},
+  getSingle${camelCaseName},
+  getAll${camelCaseName}s,
+  delete${camelCaseName},
+};`;
+        }
+        const templateContent = fs.readFileSync(templatePath, "utf8");
+        const template = handlebars_1.default.compile(templateContent);
+        const { hasFileFields, fileFields, hasParentId } = detectFileFields(fields);
+        return template({
+            camelCaseName,
+            camelCaseNameLower: camelCaseName.charAt(0).toLowerCase() + camelCaseName.slice(1),
+            folderName,
+            hasFileFields,
+            fileFields,
+            hasParentId,
+        });
+    }
+    catch (error) {
+        console.error("Error generating controller content:", error);
+        return "// Error generating controller content";
+    }
+}
+// Update the service generation function
+function generateServiceContent(camelCaseName, folderName, fields) {
+    try {
+        // First try to find the template in the current directory
+        let templatePath = path.join(__dirname, "templates", "service.template.hbs");
+        // If not found, try looking in the src directory (for development)
+        if (!fs.existsSync(templatePath)) {
+            templatePath = path.join(process.cwd(), "src", "templates", "service.template.hbs");
+        }
+        if (!fs.existsSync(templatePath)) {
+            console.error(`Service template file not found: ${templatePath}`);
+            // Fallback to basic service if template not found
+            return (`import { I${camelCaseName} } from './${folderName}.interface';\n` +
+                `import { ${camelCaseName} } from './${folderName}.model';\n\n` +
+                `export const ${camelCaseName}Services = {\n` +
+                `  create${camelCaseName}: async (payload: I${camelCaseName}) => {\n` +
+                `    const result = await ${camelCaseName}.create(payload);\n` +
+                `    return result;\n` +
+                `  },\n` +
+                `  getAll${camelCaseName}s: async () => {\n` +
+                `    const result = await ${camelCaseName}.find();\n` +
+                `    return result;\n` +
+                `  },\n` +
+                `  getSingle${camelCaseName}: async (id: string) => {\n` +
+                `    const result = await ${camelCaseName}.findById(id);\n` +
+                `    return result;\n` +
+                `  },\n` +
+                `  update${camelCaseName}: async (id: string, payload: Partial<I${camelCaseName}>) => {\n` +
+                `    const result = await ${camelCaseName}.findByIdAndUpdate(id, payload, { new: true });\n` +
+                `    return result;\n` +
+                `  },\n` +
+                `  delete${camelCaseName}: async (id: string) => {\n` +
+                `    const result = await ${camelCaseName}.findByIdAndDelete(id);\n` +
+                `    return result;\n` +
+                `  },\n` +
+                `};\n`);
+        }
+        const templateContent = fs.readFileSync(templatePath, "utf8");
+        const template = handlebars_1.default.compile(templateContent);
+        const { hasFileFields, fileFields, hasParentId, parentField } = detectFileFields(fields);
+        return template({
+            camelCaseName,
+            camelCaseNameLower: camelCaseName.charAt(0).toLowerCase() + camelCaseName.slice(1),
+            folderName,
+            hasFileFields,
+            fileFields,
+            hasParentId,
+            parentField,
+        });
+    }
+    catch (error) {
+        console.error("Error generating service content:", error);
+        return "// Error generating service content";
+    }
+}
+// Update the route generation function
+function generateRouteContent(camelCaseName, folderName, fields) {
+    try {
+        // First try to find the template in the current directory
+        let templatePath = path.join(__dirname, "templates", "route.template.hbs");
+        // If not found, try looking in the src directory (for development)
+        if (!fs.existsSync(templatePath)) {
+            templatePath = path.join(process.cwd(), "src", "templates", "route.template.hbs");
+        }
+        if (!fs.existsSync(templatePath)) {
+            console.error(`Route template file not found: ${templatePath}`);
+            // Fallback to basic route if template not found
+            return (`import express from 'express';\n` +
+                `import { ${camelCaseName}Controller } from './${folderName}.controller';\n\n` +
+                `const router = express.Router();\n\n` +
+                `router.post('/', ${camelCaseName}Controller.create${camelCaseName});\n` +
+                `router.get('/', ${camelCaseName}Controller.getAll${camelCaseName}s);\n` +
+                `router.get('/:id', ${camelCaseName}Controller.getSingle${camelCaseName});\n` +
+                `router.patch('/:id', ${camelCaseName}Controller.update${camelCaseName});\n` +
+                `router.delete('/:id', ${camelCaseName}Controller.delete${camelCaseName});\n\n` +
+                `export const ${camelCaseName}Routes = router;\n`);
+        }
+        const templateContent = fs.readFileSync(templatePath, "utf8");
+        const template = handlebars_1.default.compile(templateContent);
+        const { hasFileFields, hasParentId, parentField } = detectFileFields(fields);
+        return template({
+            camelCaseName,
+            camelCaseNameLower: camelCaseName.charAt(0).toLowerCase() + camelCaseName.slice(1),
+            folderName,
+            hasFileFields,
+            hasParentId,
+            parentField,
+        });
+    }
+    catch (error) {
+        console.error("Error generating route content:", error);
+        return "// Error generating route content";
+    }
+}
+// Add this function to detect file fields
+function detectFileFields(fields) {
+    const fileFields = [];
+    let hasParentId = false;
+    let parentField = "";
+    for (const field of fields) {
+        if (field.type.toLowerCase() === "array" &&
+            (field.name.includes("image") ||
+                field.name.includes("file") ||
+                field.name.includes("media") ||
+                field.name.includes("video"))) {
+            // Determine the input field name based on common patterns
+            let inputName = "";
+            if (field.name.includes("image"))
+                inputName = "image";
+            else if (field.name.includes("video"))
+                inputName = "media";
+            else if (field.name.includes("file"))
+                inputName = "files";
+            else
+                inputName = field.name;
+            fileFields.push({
+                name: inputName,
+                arrayName: field.name,
+            });
+        }
+        else if (field.name.includes("image") ||
+            field.name.includes("file") ||
+            field.name.includes("media") ||
+            field.name.includes("video")) {
+            // Handle single file fields
+            fileFields.push({
+                name: field.name,
+                arrayName: field.name,
+            });
+        }
+        // Check for potential parent ID fields
+        if (field.type.toLowerCase() === "objectid" &&
+            (field.name.includes("parent") ||
+                field.name.includes("service") ||
+                field.name.includes("category") ||
+                field.name.includes("user"))) {
+            hasParentId = true;
+            parentField = field.name;
+        }
+    }
+    return {
+        hasFileFields: fileFields.length > 0,
+        fileFields,
+        hasParentId,
+        parentField,
+    };
+}
