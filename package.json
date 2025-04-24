@@ -1,6 +1,6 @@
 {
   "name": "siuuu-module-generator",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Generate Express modules with Mongoose models",
   "main": "dist/index.js",
   "bin": {
@@ -17,13 +17,14 @@
     "postinstall": "node -e \"try { require('fs').chmodSync(require('path').join(__dirname, 'dist/index.js'), '755') } catch(e) {}\""
   },
   "keywords": [
+    "siuuu",
     "express",
     "mongoose",
     "generator",
     "module",
     "cli"
   ],
-  "author": "Your Name",
+  "author": "Asaduzzaman",
   "license": "MIT",
   "dependencies": {
     "commander": "^11.1.0",

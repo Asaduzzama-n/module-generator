@@ -86,17 +86,17 @@ function parseFieldDefinitions(args) {
         else {
             try {
                 // Check if the argument contains enum values
-                if (arg.includes("[") && arg.includes("]")) {
-                    const [fieldName, ...values] = arg.split("[");
-                    const enumValues = values
-                        .join("[")
-                        .slice(0, -1)
-                        .split(",")
-                        .map((v) => v.trim());
+                const enumMatch = arg.match(/^([a-zA-Z0-9_]+)\[([^\]]+)\]$/);
+                if (enumMatch) {
+                    // This is an enum field with values in square brackets
+                    const [, name, enumValues] = enumMatch;
+                    const enumOptions = enumValues.split(",").map((v) => v.trim());
                     fields.push({
-                        name: fieldName.trim(),
+                        name,
                         type: "enum",
-                        enumValues,
+                        enumValues: enumOptions,
+                        isRequired: false,
+                        isOptional: false,
                     });
                 }
                 else {
@@ -287,6 +287,10 @@ function mapToMongooseType(field) {
             return "{ type: Boolean }";
         case "date":
             return "{ type: Date }";
+        case "enum":
+            if (field.enumValues && field.enumValues.length > 0) {
+                return `{ type: String, enum: ['${field.enumValues.join("', '")}'] }`;
+            }
         case "array":
             if (((_a = field.ref) === null || _a === void 0 ? void 0 : _a.toLowerCase()) === "object" &&
                 ((_b = field.objectProperties) === null || _b === void 0 ? void 0 : _b.length)) {
@@ -765,41 +769,50 @@ function generateServiceContent(camelCaseName, folderName, fields) {
                 // Handle the error appropriately - maybe use a default template string or exit
                 console.error(`Service template file not found: ${templatePath}`);
                 // Fallback to basic service if template not found
-                return (`import { StatusCodes } from 'http-status-ccodes';\n` +
+                return (`import { StatusCodes } from 'http-status-codes';\n` +
                     `import ApiError from '../../../errors/ApiError';\n` +
-                    `import { Types } from 'mongoose';\n` +
-                    `import { removeUploadedFiles } from '../../../utils/deleteUploadedFile';\n` +
                     `import { I${camelCaseName} } from './${folderName}.interface';\n` +
                     `import { ${camelCaseName} } from './${folderName}.model';\n\n` +
+                    `const create${camelCaseName} = async (payload: I${camelCaseName}) => {\n` +
+                    `  const result = await ${camelCaseName}.create(payload);\n` +
+                    `  if (!result)\n` +
+                    `    throw new ApiError(\n` +
+                    `      StatusCodes.BAD_REQUEST,\n` +
+                    `      'Failed to create ${camelCaseName}',\n` +
+                    `    );\n` +
+                    `  return result;\n` +
+                    `};\n\n` +
+                    `const getAll${camelCaseName}s = async () => {\n` +
+                    `  const result = await ${camelCaseName}.find();\n` +
+                    `  return result;\n` +
+                    `};\n\n` +
+                    `const getSingle${camelCaseName} = async (id: string) => {\n` +
+                    `  const result = await ${camelCaseName}.findById(id);\n` +
+                    `  return result;\n` +
+                    `};\n\n` +
+                    `const update${camelCaseName} = async (\n` +
+                    `  id: string,\n` +
+                    `  payload: Partial<I${camelCaseName}>,\n` +
+                    `) => {\n` +
+                    `  const result = await ${camelCaseName}.findByIdAndUpdate(\n` +
+                    `    id,\n` +
+                    `    { $set: payload },\n` +
+                    `    {\n` +
+                    `      new: true,\n` +
+                    `    },\n` +
+                    `  );\n` +
+                    `  return result;\n` +
+                    `};\n\n` +
+                    `const delete${camelCaseName} = async (id: string) => {\n` +
+                    `  const result = await ${camelCaseName}.findByIdAndDelete(id);\n` +
+                    `  return result;\n` +
+                    `};\n\n` +
                     `export const ${camelCaseName}Services = {\n` +
-                    `  create${camelCaseName}: async (payload: I${camelCaseName}): Promise<I${camelCaseName}> => {\n` +
-                    `    const result = await ${camelCaseName}.create(payload);\n` +
-                    `    if (!result) {\n` +
-                    `      removeUploadedFiles(payload.image);\n` +
-                    `      throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create ${camelCaseName}');\n` +
-                    `    }\n` +
-                    `    return result;\n` +
-                    `  },\n\n` +
-                    `  update${camelCaseName}: async (id: string, payload: Partial<I${camelCaseName}>): Promise<I${camelCaseName} | null> => {\n` +
-                    `    const isExist = await ${camelCaseName}.findById(new Types.ObjectId(id));\n` +
-                    `    if (!isExist) throw new ApiError(StatusCodes.NOT_FOUND, '${camelCaseName} not found');\n\n` +
-                    `    const result = await ${camelCaseName}.findOneAndUpdate({ _id: id }, payload, { new: true });\n` +
-                    `    return result;\n` +
-                    `  },\n\n` +
-                    `  delete${camelCaseName}: async (id: string): Promise<I${camelCaseName} | null> => {\n` +
-                    `    const result = await ${camelCaseName}.findByIdAndDelete(new Types.ObjectId(id));\n` +
-                    `    if (!result) throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to delete ${camelCaseName}');\n` +
-                    `    return result;\n` +
-                    `  },\n\n` +
-                    `  getSingle${camelCaseName}: async (id: string): Promise<I${camelCaseName} | null> => {\n` +
-                    `    const result = await ${camelCaseName}.findById(new Types.ObjectId(id));\n` +
-                    `    if (!result) throw new ApiError(StatusCodes.NOT_FOUND, 'Requested ${camelCaseName} not found');\n` +
-                    `    return result;\n` +
-                    `  },\n\n` +
-                    `  getAll${camelCaseName}s: async (): Promise<I${camelCaseName}[]> => {\n` +
-                    `    const result = await ${camelCaseName}.find();\n` +
-                    `    return result;\n` +
-                    `  },\n` +
+                    `  create${camelCaseName},\n` +
+                    `  getAll${camelCaseName}s,\n` +
+                    `  getSingle${camelCaseName},\n` +
+                    `  update${camelCaseName},\n` +
+                    `  delete${camelCaseName},\n` +
                     `};\n`);
             }
         }

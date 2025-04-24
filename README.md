@@ -1,3 +1,12 @@
+# Adding Enum Support to SIUUU Module Generator
+
+I see that the enum feature for field definitions isn't working correctly. Let's update the README to include documentation for this feature and explain how to use it properly.
+
+## Adding Enum Documentation to README
+
+Let's add a new example section to the README that specifically covers enum fields:
+
+````markdown:d:\module-generator\README.md
 # SIUUU Module Generator
 
 A powerful CLI tool for generating Express.js + Mongoose modules with TypeScript support. Quickly scaffold complete CRUD modules with proper type definitions, validation, and file handling.
@@ -14,12 +23,13 @@ A powerful CLI tool for generating Express.js + Mongoose modules with TypeScript
 - ⚙️ Highly configurable via package.json or CLI options
 - 🛡️ Built-in request validation middleware
 - 🎨 Clean and consistent code structure
+- 🔣 Support for enum fields with predefined values
 
 ## Installation
 
 ```bash
 npm install siuuu-module-generator --global
-```
+````
 
 Or use with npx:
 
@@ -87,6 +97,14 @@ siuuu-create Profile name:string avatar:string photos:array:string
 siuuu-create Order user:objectid:User products:array:objectid:Product
 ```
 
+### With Enum Values
+
+```bash
+siuuu-create Category label:enum[CII,CAA,OTHER] status:enum[ACTIVE,INACTIVE]
+```
+
+This creates a module with enum fields that are restricted to the specified values in both the interface and model.
+
 ### Complex Nested Structure
 
 ```bash
@@ -140,6 +158,7 @@ DELETE /api/v1/products/:id  - Delete product
 2. Mark required fields with "!"
 3. Use descriptive field names
 4. Follow naming conventions for file fields (image, file, media)
+5. For enum fields, use the format `fieldname:enum[VALUE1,VALUE2,VALUE3]`
 
 ## Common Patterns
 
@@ -147,6 +166,12 @@ DELETE /api/v1/products/:id  - Delete product
 
 ```bash
 siuuu-create Media title:string description:string file:string type:string
+```
+
+### Enum Field Module
+
+```bash
+siuuu-create Role name:string permission:enum[READ,WRITE,ADMIN]
 ```
 
 ### Nested Data Structure
