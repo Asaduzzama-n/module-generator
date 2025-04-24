@@ -1,4 +1,4 @@
-# Express Module Generator
+# SIUUU Module Generator
 
 A powerful CLI tool for generating Express.js + Mongoose modules with TypeScript support. Quickly scaffold complete CRUD modules with proper type definitions, validation, and file handling.
 
@@ -18,13 +18,13 @@ A powerful CLI tool for generating Express.js + Mongoose modules with TypeScript
 ## Installation
 
 ```bash
-npm install express-module-generator --global
+npm install siuuu-module-generator --global
 ```
 
 Or use with npx:
 
 ```bash
-npx express-module-generator
+npx siuuu-module-generator
 ```
 
 ## Quick Start
@@ -32,7 +32,7 @@ npx express-module-generator
 Generate a basic module:
 
 ```bash
-create-module User name:string email:string age:number
+siuuu-create User name:string email:string age:number
 ```
 
 This creates:
@@ -64,60 +64,39 @@ src/app/modules/user/
 ### Via CLI
 
 ```bash
-create-module User --modules-dir src/modules --routes-file src/routes.ts
+siuuu-create User --modules-dir src/modules --routes-file src/routes.ts
 ```
-
-## Field Types
-
-### Basic Types
-
-- `string` - Text fields
-- `number` - Numeric fields
-- `boolean` - Boolean fields
-- `date` - Date fields
-- `objectid` - MongoDB ObjectId
-
-### Advanced Types
-
-- `array` - Array fields
-- `object` - Nested objects
-
-### Modifiers
-
-- Required: `fieldName!:type`
-- Optional: `fieldName?:type`
-- Reference: `fieldName:objectid:ModelName`
 
 ## Examples
 
 ### Basic CRUD Module
 
 ```bash
-create-module Product name!:string price!:number description?:string
+siuuu-create Product name!:string price!:number description?:string
 ```
 
 ### With File Uploads
 
 ```bash
-create-module Profile name:string avatar:string photos:array:string
+siuuu-create Profile name:string avatar:string photos:array:string
 ```
 
 ### With References
 
 ```bash
-create-module Order user:objectid:User products:array:objectid:Product
+siuuu-create Order user:objectid:User products:array:objectid:Product
 ```
 
 ### Complex Nested Structure
 
 ```bash
-create-module Survey title:string questions:array:object:text:string:options:array:string
+siuuu-create Survey title:string questions:array:object:text:string:options:array:string
 ```
 
 ### Skip Specific Files
 
 ```bash
-create-module User name:string --skip validation constants
+siuuu-create User name:string --skip validation constants
 ```
 
 ## Generated Code Features
@@ -128,13 +107,6 @@ create-module User name:string --skip validation constants
 - File upload handling
 - Proper error handling
 - Response formatting
-
-### Services
-
-- Database operations
-- File management
-- Business logic separation
-- Type-safe operations
 
 ### Routes
 
@@ -174,30 +146,14 @@ DELETE /api/v1/products/:id  - Delete product
 ### File Upload Module
 
 ```bash
-create-module Media title:string description:string file:string type:string
-```
-
-### Parent-Child Relationship
-
-```bash
-create-module Comment text:string post:objectid:Post user:objectid:User
+siuuu-create Media title:string description:string file:string type:string
 ```
 
 ### Nested Data Structure
 
 ```bash
-create-module Form fields:array:object:label:string:type:string:required:boolean
+siuuu-create Form fields:array:object:label:string:type:string:required:boolean
 ```
-
-## Error Handling
-
-The generator includes built-in error handling for:
-
-- Database operations
-- File uploads
-- Validation errors
-- Not found errors
-- Authorization errors
 
 ## Contributing
 
@@ -206,15 +162,3 @@ Contributions are welcome! Please read our contributing guidelines for details.
 ## License
 
 MIT
-
-```
-
-This README now provides:
-1. Clear feature overview
-2. Detailed usage examples
-3. Configuration options
-4. Field type documentation
-5. Generated code explanation
-6. Common patterns and best practices
-7. Error handling information
-```

@@ -22,8 +22,9 @@ interface FieldDefinition {
   ref?: string;
   isRequired?: boolean;
   isOptional?: boolean;
-  objectProperties?: FieldDefinition[]; // Changed to support nested field definitions
-  arrayItemType?: string; // Type of items in an array
+  enumValues?: string[];
+  objectProperties?: FieldDefinition[];
+  arrayItemType?: string;
 }
 
 // Templates type
@@ -82,94 +83,105 @@ function parseFieldDefinitions(args: string[]): {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
 
-    // Check if we've reached the skip flag
     if (arg === "--skip") {
       skipMode = true;
       continue;
     }
 
     if (skipMode) {
-      // Add to skip files list
       skipFiles.push(arg);
     } else {
       try {
-        // Process as field definition
-        const parts = arg.split(":");
+        // Check if the argument contains enum values
+        if (arg.includes("[") && arg.includes("]")) {
+          const [fieldName, ...values] = arg.split("[");
+          const enumValues = values
+            .join("[")
+            .slice(0, -1)
+            .split(",")
+            .map((v) => v.trim());
 
-        if (parts.length >= 2) {
-          let name = parts[0].trim();
-          const type = parts[1].trim().toLowerCase();
+          fields.push({
+            name: fieldName.trim(),
+            type: "enum",
+            enumValues,
+          });
+        } else {
+          // Process as field definition
+          const parts = arg.split(":");
 
-          // Check for optional marker (?)
-          const isOptional = name.endsWith("?");
-          if (isOptional) {
-            name = name.slice(0, -1); // Remove the ? from the name
-          }
+          if (parts.length >= 2) {
+            let name = parts[0].trim();
+            const type = parts[1].trim().toLowerCase();
 
-          // Check for required marker (!)
-          const isRequired = name.endsWith("!");
-          if (isRequired) {
-            name = name.slice(0, -1); // Remove the ! from the name
-          }
-
-          // Handle array of objects with properties
-          if (
-            type === "array" &&
-            parts.length > 2 &&
-            parts[2].toLowerCase() === "object"
-          ) {
-            console.log(`Processing array of objects field: ${name}`);
-
-            // This is an array of objects with properties
-            const objectProperties = [];
-
-            // Process object properties (starting from index 3)
-            for (let j = 3; j < parts.length; j += 2) {
-              if (j + 1 < parts.length) {
-                let propName = parts[j];
-                const propType = parts[j + 1];
-
-                console.log(`  Property: ${propName}:${propType}`);
-
-                // Check for optional/required markers in property name
-                const propIsOptional = propName.endsWith("?");
-                const propIsRequired = propName.endsWith("!");
-
-                if (propIsOptional) {
-                  propName = propName.slice(0, -1);
-                }
-                if (propIsRequired) {
-                  propName = propName.slice(0, -1);
-                }
-
-                objectProperties.push({
-                  name: propName,
-                  type: propType,
-                  isOptional: propIsOptional,
-                  isRequired: propIsRequired,
-                });
-              }
+            // Check for optional marker (?)
+            const isOptional = name.endsWith("?");
+            if (isOptional) {
+              name = name.slice(0, -1);
             }
 
-            fields.push({
-              name,
-              type,
-              ref: "object",
-              isRequired,
-              isOptional,
-              objectProperties,
-            });
+            // Check for required marker (!)
+            const isRequired = name.endsWith("!");
+            if (isRequired) {
+              name = name.slice(0, -1);
+            }
 
-            console.log(
-              `Added field with ${objectProperties.length} properties`
-            );
-          } else {
-            // Regular field
-            const ref = parts.length > 2 ? parts[2].trim() : undefined;
-            fields.push({ name, type, ref, isRequired, isOptional });
-            console.log(
-              `Added regular field: ${name}:${type}${ref ? `:${ref}` : ""}`
-            );
+            // Handle array of objects with properties
+            if (
+              type === "array" &&
+              parts.length > 2 &&
+              parts[2].toLowerCase() === "object"
+            ) {
+              console.log(`Processing array of objects field: ${name}`);
+
+              const objectProperties = [];
+
+              for (let j = 3; j < parts.length; j += 2) {
+                if (j + 1 < parts.length) {
+                  let propName = parts[j];
+                  const propType = parts[j + 1];
+
+                  console.log(`  Property: ${propName}:${propType}`);
+
+                  const propIsOptional = propName.endsWith("?");
+                  const propIsRequired = propName.endsWith("!");
+
+                  if (propIsOptional) {
+                    propName = propName.slice(0, -1);
+                  }
+                  if (propIsRequired) {
+                    propName = propName.slice(0, -1);
+                  }
+
+                  objectProperties.push({
+                    name: propName,
+                    type: propType,
+                    isOptional: propIsOptional,
+                    isRequired: propIsRequired,
+                  });
+                }
+              }
+
+              fields.push({
+                name,
+                type,
+                ref: "object",
+                isRequired,
+                isOptional,
+                objectProperties,
+              });
+
+              console.log(
+                `Added field with ${objectProperties.length} properties`
+              );
+            } else {
+              // Regular field
+              const ref = parts.length > 2 ? parts[2].trim() : undefined;
+              fields.push({ name, type, ref, isRequired, isOptional });
+              console.log(
+                `Added regular field: ${name}:${type}${ref ? `:${ref}` : ""}`
+              );
+            }
           }
         }
       } catch (error) {
@@ -749,108 +761,115 @@ main();
 function generateControllerContent(
   camelCaseName: string,
   folderName: string,
-  fields: any[]
+  fields: FieldDefinition[]
 ): string {
   try {
     // First try to find the template in the current directory
     let templatePath = path.join(
       __dirname,
       "templates",
-      "controller.template.hbs"
+      "controller.template.ts"
     );
 
     // If not found, try looking in the src directory (for development)
     if (!fs.existsSync(templatePath)) {
-      templatePath = path.join(
+      const fallbackPath = path.join(
         process.cwd(),
         "src",
         "templates",
-        "controller.template.hbs"
+        "controller.template.ts"
       );
-    }
 
-    if (!fs.existsSync(templatePath)) {
-      console.error(`Controller template file not found: ${templatePath}`);
-      // Fallback to basic controller if template not found
-      return `import { Request, Response } from 'express';
-import { ${camelCaseName}Services } from './${folderName}.service';
-import catchAsync from '../../../shared/catchAsync';
-import sendResponse from '../../../shared/sendResponse';
-import { StatusCodes } from 'http-status-codes';
-
-const create${camelCaseName} = catchAsync(async (req: Request, res: Response) => {
-  const ${folderName}Data = req.body;
-  const result = await ${camelCaseName}Services.create${camelCaseName}(${folderName}Data);
+      if (fs.existsSync(fallbackPath)) {
+        templatePath = fallbackPath;
+      } else {
+        console.error(
+          `Template not found at ${templatePath} or ${fallbackPath}`
+        );
+        // Handle the error appropriately - maybe use a default template string or exit
+        console.error(`Controller template file not found: ${templatePath}`);
+        // Fallback to basic controller if template not found
+        return `import { Request, Response } from 'express';
+  import { ${camelCaseName}Services } from './${folderName}.service';
+  import catchAsync from '../../../shared/catchAsync';
+  import sendResponse from '../../../shared/sendResponse';
+  import { StatusCodes } from 'http-status-codes';
   
-  sendResponse(res, {
-    statusCode: StatusCodes.CREATED,
-    success: true,
-    message: '${camelCaseName} created successfully',
-    data: result,
+  const create${camelCaseName} = catchAsync(async (req: Request, res: Response) => {
+    const ${folderName}Data = req.body;
+    const result = await ${camelCaseName}Services.create${camelCaseName}(${folderName}Data);
+    
+    sendResponse(res, {
+      statusCode: StatusCodes.CREATED,
+      success: true,
+      message: '${camelCaseName} created successfully',
+      data: result,
+    });
   });
-});
-
-const update${camelCaseName} = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const ${folderName}Data = req.body;
-  const result = await ${camelCaseName}Services.update${camelCaseName}(id, ${folderName}Data);
   
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: '${camelCaseName} updated successfully',
-    data: result,
+  const update${camelCaseName} = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const ${folderName}Data = req.body;
+    const result = await ${camelCaseName}Services.update${camelCaseName}(id, ${folderName}Data);
+    
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: '${camelCaseName} updated successfully',
+      data: result,
+    });
   });
-});
-
-const getSingle${camelCaseName} = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const result = await ${camelCaseName}Services.getSingle${camelCaseName}(id);
   
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: '${camelCaseName} retrieved successfully',
-    data: result,
+  const getSingle${camelCaseName} = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const result = await ${camelCaseName}Services.getSingle${camelCaseName}(id);
+    
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: '${camelCaseName} retrieved successfully',
+      data: result,
+    });
   });
-});
-
-const getAll${camelCaseName}s = catchAsync(async (req: Request, res: Response) => {
-  const result = await ${camelCaseName}Services.getAll${camelCaseName}s();
   
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: '${camelCaseName}s retrieved successfully',
-    data: result,
+  const getAll${camelCaseName}s = catchAsync(async (req: Request, res: Response) => {
+    const result = await ${camelCaseName}Services.getAll${camelCaseName}s();
+    
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: '${camelCaseName}s retrieved successfully',
+      data: result,
+    });
   });
-});
-
-const delete${camelCaseName} = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const result = await ${camelCaseName}Services.delete${camelCaseName}(id);
   
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: '${camelCaseName} deleted successfully',
-    data: result,
+  const delete${camelCaseName} = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const result = await ${camelCaseName}Services.delete${camelCaseName}(id);
+    
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: '${camelCaseName} deleted successfully',
+      data: result,
+    });
   });
-});
-
-export const ${camelCaseName}Controller = {
-  create${camelCaseName},
-  update${camelCaseName},
-  getSingle${camelCaseName},
-  getAll${camelCaseName}s,
-  delete${camelCaseName},
-};`;
+  
+  export const ${camelCaseName}Controller = {
+    create${camelCaseName},
+    update${camelCaseName},
+    getSingle${camelCaseName},
+    getAll${camelCaseName}s,
+    delete${camelCaseName},
+  };`;
+      }
     }
 
     const templateContent = fs.readFileSync(templatePath, "utf8");
     const template = Handlebars.compile(templateContent);
 
-    const { hasFileFields, fileFields, hasParentId } = detectFileFields(fields);
+    const { hasFileFields, fileFields, hasParentId, parentField } =
+      detectFileFields(fields);
 
     return template({
       camelCaseName,
@@ -860,6 +879,7 @@ export const ${camelCaseName}Controller = {
       hasFileFields,
       fileFields,
       hasParentId,
+      parentField,
     });
   } catch (error) {
     console.error("Error generating controller content:", error);
@@ -875,53 +895,66 @@ function generateServiceContent(
 ): string {
   try {
     // First try to find the template in the current directory
-    let templatePath = path.join(
-      __dirname,
-      "templates",
-      "service.template.hbs"
-    );
+    let templatePath = path.join(__dirname, "templates", "service.template.ts");
 
     // If not found, try looking in the src directory (for development)
     if (!fs.existsSync(templatePath)) {
-      templatePath = path.join(
+      const fallbackPath = path.join(
         process.cwd(),
         "src",
         "templates",
-        "service.template.hbs"
+        "controller.template.js"
       );
-    }
 
-    if (!fs.existsSync(templatePath)) {
-      console.error(`Service template file not found: ${templatePath}`);
-      // Fallback to basic service if template not found
-      return (
-        `import { I${camelCaseName} } from './${folderName}.interface';\n` +
-        `import { ${camelCaseName} } from './${folderName}.model';\n\n` +
-        `export const ${camelCaseName}Services = {\n` +
-        `  create${camelCaseName}: async (payload: I${camelCaseName}) => {\n` +
-        `    const result = await ${camelCaseName}.create(payload);\n` +
-        `    return result;\n` +
-        `  },\n` +
-        `  getAll${camelCaseName}s: async () => {\n` +
-        `    const result = await ${camelCaseName}.find();\n` +
-        `    return result;\n` +
-        `  },\n` +
-        `  getSingle${camelCaseName}: async (id: string) => {\n` +
-        `    const result = await ${camelCaseName}.findById(id);\n` +
-        `    return result;\n` +
-        `  },\n` +
-        `  update${camelCaseName}: async (id: string, payload: Partial<I${camelCaseName}>) => {\n` +
-        `    const result = await ${camelCaseName}.findByIdAndUpdate(id, payload, { new: true });\n` +
-        `    return result;\n` +
-        `  },\n` +
-        `  delete${camelCaseName}: async (id: string) => {\n` +
-        `    const result = await ${camelCaseName}.findByIdAndDelete(id);\n` +
-        `    return result;\n` +
-        `  },\n` +
-        `};\n`
-      );
+      if (fs.existsSync(fallbackPath)) {
+        templatePath = fallbackPath;
+      } else {
+        console.error(
+          `Template not found at ${templatePath} or ${fallbackPath}`
+        );
+        // Handle the error appropriately - maybe use a default template string or exit
+        console.error(`Service template file not found: ${templatePath}`);
+        // Fallback to basic service if template not found
+        return (
+          `import { StatusCodes } from 'http-status-ccodes';\n` +
+          `import ApiError from '../../../errors/ApiError';\n` +
+          `import { Types } from 'mongoose';\n` +
+          `import { removeUploadedFiles } from '../../../utils/deleteUploadedFile';\n` +
+          `import { I${camelCaseName} } from './${folderName}.interface';\n` +
+          `import { ${camelCaseName} } from './${folderName}.model';\n\n` +
+          `export const ${camelCaseName}Services = {\n` +
+          `  create${camelCaseName}: async (payload: I${camelCaseName}): Promise<I${camelCaseName}> => {\n` +
+          `    const result = await ${camelCaseName}.create(payload);\n` +
+          `    if (!result) {\n` +
+          `      removeUploadedFiles(payload.image);\n` +
+          `      throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create ${camelCaseName}');\n` +
+          `    }\n` +
+          `    return result;\n` +
+          `  },\n\n` +
+          `  update${camelCaseName}: async (id: string, payload: Partial<I${camelCaseName}>): Promise<I${camelCaseName} | null> => {\n` +
+          `    const isExist = await ${camelCaseName}.findById(new Types.ObjectId(id));\n` +
+          `    if (!isExist) throw new ApiError(StatusCodes.NOT_FOUND, '${camelCaseName} not found');\n\n` +
+          `    const result = await ${camelCaseName}.findOneAndUpdate({ _id: id }, payload, { new: true });\n` +
+          `    return result;\n` +
+          `  },\n\n` +
+          `  delete${camelCaseName}: async (id: string): Promise<I${camelCaseName} | null> => {\n` +
+          `    const result = await ${camelCaseName}.findByIdAndDelete(new Types.ObjectId(id));\n` +
+          `    if (!result) throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to delete ${camelCaseName}');\n` +
+          `    return result;\n` +
+          `  },\n\n` +
+          `  getSingle${camelCaseName}: async (id: string): Promise<I${camelCaseName} | null> => {\n` +
+          `    const result = await ${camelCaseName}.findById(new Types.ObjectId(id));\n` +
+          `    if (!result) throw new ApiError(StatusCodes.NOT_FOUND, 'Requested ${camelCaseName} not found');\n` +
+          `    return result;\n` +
+          `  },\n\n` +
+          `  getAll${camelCaseName}s: async (): Promise<I${camelCaseName}[]> => {\n` +
+          `    const result = await ${camelCaseName}.find();\n` +
+          `    return result;\n` +
+          `  },\n` +
+          `};\n`
+        );
+      }
     }
-
     const templateContent = fs.readFileSync(templatePath, "utf8");
     const template = Handlebars.compile(templateContent);
 
