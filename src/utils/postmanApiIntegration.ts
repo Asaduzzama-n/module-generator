@@ -7,6 +7,18 @@ interface PostmanConfig {
   apiKey: string;
   collectionId?: string;
   workspaceId?: string;
+  baseUrl?: string;
+}
+
+interface FieldDefinition {
+  name: string;
+  type: string;
+  ref?: string;
+  isRequired?: boolean;
+  isOptional?: boolean;
+  enumValues?: string[];
+  objectProperties?: FieldDefinition[];
+  arrayItemType?: string;
 }
 
 /**
@@ -15,7 +27,7 @@ interface PostmanConfig {
 export async function updatePostmanCollection(
   moduleName: string,
   camelCaseName: string,
-  fields: any[],
+  fields: FieldDefinition[],
   config: PostmanConfig,
   baseUrl: string = "http://localhost:5000/api/v1"
 ): Promise<string> {
@@ -55,8 +67,20 @@ export async function updatePostmanCollection(
         baseUrl
       );
 
-      // Add the new folder to the existing collection
-      collection.item.push(newCollection.item[0]);
+      // Check if a folder for this module already exists
+      const moduleFolder = collection.item.find(
+        (item: any) =>
+          item.name.toLowerCase() === `${camelCaseName} Endpoints`.toLowerCase()
+      );
+
+      if (moduleFolder) {
+        // Replace the existing folder with the new one
+        const index = collection.item.indexOf(moduleFolder);
+        collection.item[index] = newCollection.item[0];
+      } else {
+        // Add the new folder to the existing collection
+        collection.item.push(newCollection.item[0]);
+      }
 
       // Update the collection via Postman API
       await axios.put(
@@ -95,32 +119,54 @@ export async function updatePostmanCollection(
 }
 
 /**
- * Saves Postman configuration to a local file
+ * Saves Postman configuration to package.json
  */
 export function savePostmanConfig(config: PostmanConfig): void {
-  const configDir = path.join(process.cwd(), ".siuuu");
-  const configPath = path.join(configDir, "postman.json");
+  const packageJsonPath = path.join(process.cwd(), "package.json");
 
-  // Create config directory if it doesn't exist
-  if (!fs.existsSync(configDir)) {
-    fs.mkdirSync(configDir, { recursive: true });
+  if (fs.existsSync(packageJsonPath)) {
+    try {
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
+
+      // Create or update the moduleGenerator section
+      if (!packageJson.moduleGenerator) {
+        packageJson.moduleGenerator = {};
+      }
+
+      // Add the postman configuration
+      packageJson.moduleGenerator.postman = {
+        apiKey: config.apiKey,
+        collectionId: config.collectionId,
+        workspaceId: config.workspaceId,
+        baseUrl: config.baseUrl || "http://localhost:5000/api/v1",
+      };
+
+      // Write the updated package.json
+      fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
+    } catch (error) {
+      console.error("Error saving Postman config to package.json:", error);
+      throw error;
+    }
+  } else {
+    throw new Error("package.json not found in the current directory");
   }
-
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 }
 
 /**
- * Loads Postman configuration from a local file
+ * Loads Postman configuration from package.json
  */
 export function loadPostmanConfig(): PostmanConfig | null {
-  const configPath = path.join(process.cwd(), ".siuuu", "postman.json");
+  const packageJsonPath = path.join(process.cwd(), "package.json");
 
-  if (fs.existsSync(configPath)) {
+  if (fs.existsSync(packageJsonPath)) {
     try {
-      const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-      return config;
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
+
+      if (packageJson.moduleGenerator && packageJson.moduleGenerator.postman) {
+        return packageJson.moduleGenerator.postman;
+      }
     } catch (error) {
-      console.error("Error loading Postman config:", error);
+      console.error("Error loading Postman config from package.json:", error);
     }
   }
 

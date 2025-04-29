@@ -626,17 +626,33 @@ function generatePostmanCollection(folderName, camelCaseName, fields, baseUrl) {
 function generateSampleRequestBody(fields) {
     const body = {};
     fields.forEach((field) => {
-        var _a, _b, _c;
-        if (field.isOptional) {
-            // Skip optional fields in sample
-            return;
-        }
+        var _a, _b, _c, _d;
         switch (field.type.toLowerCase()) {
             case "string":
-                body[field.name] = `Sample ${field.name}`;
+                if (field.name.includes("email"))
+                    body[field.name] = "user@example.com";
+                else if (field.name.includes("name"))
+                    body[field.name] = "Sample Name";
+                else if (field.name.includes("image") || field.name.includes("avatar"))
+                    body[field.name] = "https://example.com/image.jpg";
+                else if (field.name.includes("phone"))
+                    body[field.name] = "+1234567890";
+                else if (field.name.includes("address"))
+                    body[field.name] = "123 Sample Street";
+                else if (field.name.includes("description"))
+                    body[field.name] = "This is a sample description";
+                else
+                    body[field.name] = "Sample text";
                 break;
             case "number":
-                body[field.name] = 123;
+                if (field.name.includes("age"))
+                    body[field.name] = 25;
+                else if (field.name.includes("price"))
+                    body[field.name] = 99.99;
+                else if (field.name.includes("quantity"))
+                    body[field.name] = 10;
+                else
+                    body[field.name] = 42;
                 break;
             case "boolean":
                 body[field.name] = true;
@@ -644,53 +660,60 @@ function generateSampleRequestBody(fields) {
             case "date":
                 body[field.name] = new Date().toISOString();
                 break;
-            case "enum":
-                if (field.enumValues && field.enumValues.length > 0) {
-                    body[field.name] = field.enumValues[0];
-                }
-                else {
-                    body[field.name] = "sample_enum_value";
-                }
-                break;
-            case "array":
-                if (((_a = field.ref) === null || _a === void 0 ? void 0 : _a.toLowerCase()) === "object" &&
-                    ((_b = field.objectProperties) === null || _b === void 0 ? void 0 : _b.length)) {
-                    body[field.name] = [
-                        generateNestedObjectSample(field.objectProperties),
-                    ];
-                }
-                else {
-                    body[field.name] = ["sample_item"];
-                }
-                break;
-            case "object":
-                if ((_c = field.objectProperties) === null || _c === void 0 ? void 0 : _c.length) {
-                    body[field.name] = generateNestedObjectSample(field.objectProperties);
-                }
-                else {
-                    body[field.name] = { key: "value" };
-                }
-                break;
             case "objectid":
             case "id":
                 body[field.name] = "507f1f77bcf86cd799439011";
                 break;
+            case "array":
+                if (field.arrayItemType === "string")
+                    body[field.name] = ["Sample item 1", "Sample item 2"];
+                else if (field.arrayItemType === "number")
+                    body[field.name] = [1, 2, 3];
+                else if (field.arrayItemType === "objectid")
+                    body[field.name] = [
+                        "507f1f77bcf86cd799439011",
+                        "507f1f77bcf86cd799439012",
+                    ];
+                else if (((_a = field.ref) === null || _a === void 0 ? void 0 : _a.toLowerCase()) === "object" &&
+                    ((_b = field.objectProperties) === null || _b === void 0 ? void 0 : _b.length)) {
+                    body[field.name] = [generateNestedObject(field.objectProperties)];
+                }
+                else {
+                    body[field.name] = [];
+                }
+                break;
+            case "object":
+                if ((_c = field.objectProperties) === null || _c === void 0 ? void 0 : _c.length) {
+                    body[field.name] = generateNestedObject(field.objectProperties);
+                }
+                else {
+                    body[field.name] = {};
+                }
+                break;
+            case "enum":
+                if ((_d = field.enumValues) === null || _d === void 0 ? void 0 : _d.length) {
+                    body[field.name] = field.enumValues[0];
+                }
+                else {
+                    body[field.name] = "ENUM_VALUE";
+                }
+                break;
             default:
-                body[field.name] = `Sample ${field.name}`;
+                body[field.name] = "Sample value";
         }
     });
     return body;
 }
-// Helper function to generate sample for nested objects
-function generateNestedObjectSample(properties) {
+// Helper function to generate nested objects
+function generateNestedObject(properties) {
     const obj = {};
     properties.forEach((prop) => {
         switch (prop.type.toLowerCase()) {
             case "string":
-                obj[prop.name] = `Sample ${prop.name}`;
+                obj[prop.name] = "Sample nested text";
                 break;
             case "number":
-                obj[prop.name] = 123;
+                obj[prop.name] = 42;
                 break;
             case "boolean":
                 obj[prop.name] = true;
@@ -703,7 +726,7 @@ function generateNestedObjectSample(properties) {
                 obj[prop.name] = "507f1f77bcf86cd799439011";
                 break;
             default:
-                obj[prop.name] = `Sample ${prop.name}`;
+                obj[prop.name] = "Sample value";
         }
     });
     return obj;
@@ -748,25 +771,54 @@ function updatePostmanCollection(folderName, camelCaseName, fields, config, base
         }
     });
 }
-// Save Postman configuration to a file
+// Save Postman configuration to package.json
 function savePostmanConfig(config) {
-    const configDir = path.join(process.cwd(), ".config");
-    if (!fs.existsSync(configDir)) {
-        fs.mkdirSync(configDir, { recursive: true });
+    try {
+        const packageJsonPath = path.join(process.cwd(), "package.json");
+        if (fs.existsSync(packageJsonPath)) {
+            const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
+            // Initialize moduleGenerator if it doesn't exist
+            if (!packageJson.moduleGenerator) {
+                packageJson.moduleGenerator = {};
+            }
+            // Add Postman configuration
+            packageJson.moduleGenerator.postman = config;
+            // Write back to package.json
+            fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
+            return;
+        }
+        // Fallback to .config directory if package.json doesn't exist
+        const configDir = path.join(process.cwd(), ".config");
+        if (!fs.existsSync(configDir)) {
+            fs.mkdirSync(configDir, { recursive: true });
+        }
+        const configPath = path.join(configDir, "postman.json");
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
     }
-    const configPath = path.join(configDir, "postman.json");
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    catch (error) {
+        console.warn("Could not save Postman configuration", error);
+    }
 }
-// Load Postman configuration from a file
+// Load Postman configuration from package.json or fallback to file
 function loadPostmanConfig() {
-    const configPath = path.join(process.cwd(), ".config", "postman.json");
-    if (fs.existsSync(configPath)) {
-        try {
+    var _a;
+    try {
+        // First try to load from package.json
+        const packageJsonPath = path.join(process.cwd(), "package.json");
+        if (fs.existsSync(packageJsonPath)) {
+            const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
+            if ((_a = packageJson.moduleGenerator) === null || _a === void 0 ? void 0 : _a.postman) {
+                return packageJson.moduleGenerator.postman;
+            }
+        }
+        // Fallback to .config/postman.json
+        const configPath = path.join(process.cwd(), ".config", "postman.json");
+        if (fs.existsSync(configPath)) {
             return JSON.parse(fs.readFileSync(configPath, "utf-8"));
         }
-        catch (error) {
-            console.warn("Could not load Postman configuration, file exists but is invalid");
-        }
+    }
+    catch (error) {
+        console.warn("Could not load Postman configuration", error);
     }
     return null;
 }
@@ -787,7 +839,7 @@ function main() {
             .option("--postman-api-key <key>", "Postman API key for direct integration")
             .option("--postman-collection <id>", "Postman collection ID to update")
             .option("--postman-workspace <id>", "Postman workspace ID to create collection in")
-            .option("--save-postman-config", "Save Postman API configuration for future use")
+            .option("--save-postman-config", "Save Postman API configuration to package.json for future use")
             .option("--base-url <url>", "Base URL for Postman requests", "http://localhost:5000/api/v1")
             .allowUnknownOption(true) // Allow field definitions to be passed
             .action((name, options) => __awaiter(this, void 0, void 0, function* () {
@@ -812,7 +864,8 @@ function main() {
             // Check if we should use Postman API integration
             if (options.postmanApiKey ||
                 options.postmanCollection ||
-                options.postmanWorkspace) {
+                options.postmanWorkspace ||
+                options.savePostmanConfig) {
                 console.log(`\nUpdating Postman collection via API...`);
                 try {
                     // Load existing config if available
@@ -827,10 +880,13 @@ function main() {
                     if (options.postmanWorkspace) {
                         postmanConfig.workspaceId = options.postmanWorkspace;
                     }
+                    if (options.baseUrl) {
+                        postmanConfig.baseUrl = options.baseUrl;
+                    }
                     // Save config if requested
                     if (options.savePostmanConfig) {
                         savePostmanConfig(postmanConfig);
-                        console.log("✅ Postman configuration saved for future use");
+                        console.log("✅ Postman configuration saved to package.json for future use");
                     }
                     // Update the collection via API
                     const apiResult = yield updatePostmanCollection(result.folderName, result.camelCaseName, fields, postmanConfig, baseUrl);
@@ -863,6 +919,29 @@ function main() {
                 }
                 catch (error) {
                     console.error("❌ Error generating Postman collection:", error);
+                }
+            }
+            // Check if we have saved Postman config and should use it automatically
+            else {
+                const savedConfig = loadPostmanConfig();
+                if (savedConfig &&
+                    savedConfig.apiKey &&
+                    (savedConfig.collectionId || savedConfig.workspaceId)) {
+                    console.log(`\nUsing saved Postman configuration from package.json...`);
+                    try {
+                        const result = {
+                            folderName: "",
+                            camelCaseName: "",
+                        };
+                        let config = loadPostmanConfig() || { apiKey: "" };
+                        const updateResult = yield updatePostmanCollection(result.folderName, result.camelCaseName, fields, config, savedConfig.baseUrl || baseUrl);
+                        console.log(`✅ ${updateResult}`);
+                    }
+                    catch (error) {
+                        console.error("❌ Error updating Postman collection via API:", 
+                        //@ts-ignore
+                        error.message);
+                    }
                 }
             }
         }));

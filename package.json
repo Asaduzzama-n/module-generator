@@ -1,10 +1,10 @@
 {
-  "name": "siuuu-module-generator",
-  "version": "1.2.4",
+  "name": "leo-module-generator",
+  "version": "2.0.0",
   "description": "Generate Express modules with Mongoose models",
   "main": "dist/index.js",
   "bin": {
-    "siuuu-create": "dist/index.js"
+    "leo-create": "dist/index.js"
   },
   "files": [
     "dist",
@@ -17,7 +17,8 @@
     "postinstall": "node -e \"try { require('fs').chmodSync(require('path').join(__dirname, 'dist/index.js'), '755') } catch(e) {}\""
   },
   "keywords": [
-    "siuuu",
+    "leo",
+    "messi",
     "express",
     "mongoose",
     "generator",
