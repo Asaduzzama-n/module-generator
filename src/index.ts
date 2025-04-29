@@ -4,8 +4,10 @@ import { Command } from "commander";
 // Make sure these imports are at the top of the file
 import * as fs from "fs";
 import * as path from "path";
+import axios from "axios";
 
 import Handlebars from "handlebars";
+import { v4 as uuidv4 } from "uuid";
 
 // Configuration interface
 interface ModuleGeneratorConfig {
@@ -577,6 +579,312 @@ function mapToZodType(type: string, field?: FieldDefinition): string {
   }
 }
 
+// Function to generate Postman collection for a module
+function generatePostmanCollection(
+  folderName: string,
+  camelCaseName: string,
+  fields: FieldDefinition[],
+  baseUrl: string
+) {
+  const collection = {
+    info: {
+      _postman_id: uuidv4(),
+      name: `${camelCaseName} API`,
+      description: `API endpoints for ${camelCaseName} module`,
+      schema:
+        "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    },
+    item: [
+      {
+        name: `Create ${camelCaseName}`,
+        request: {
+          method: "POST",
+          header: [
+            {
+              key: "Content-Type",
+              value: "application/json",
+            },
+          ],
+          url: {
+            raw: `{{baseUrl}}/${folderName}`,
+            host: ["{{baseUrl}}"],
+            path: [folderName],
+          },
+          body: {
+            mode: "raw",
+            raw: JSON.stringify(generateSampleRequestBody(fields), null, 2),
+          },
+        },
+      },
+      {
+        name: `Get All ${camelCaseName}s`,
+        request: {
+          method: "GET",
+          url: {
+            raw: `{{baseUrl}}/${folderName}`,
+            host: ["{{baseUrl}}"],
+            path: [folderName],
+          },
+        },
+      },
+      {
+        name: `Get ${camelCaseName} by ID`,
+        request: {
+          method: "GET",
+          url: {
+            raw: `{{baseUrl}}/${folderName}/:id`,
+            host: ["{{baseUrl}}"],
+            path: [folderName, ":id"],
+            variable: [
+              {
+                key: "id",
+                value: "{{id}}",
+                description: `ID of the ${camelCaseName} to retrieve`,
+              },
+            ],
+          },
+        },
+      },
+      {
+        name: `Update ${camelCaseName}`,
+        request: {
+          method: "PATCH",
+          header: [
+            {
+              key: "Content-Type",
+              value: "application/json",
+            },
+          ],
+          url: {
+            raw: `{{baseUrl}}/${folderName}/:id`,
+            host: ["{{baseUrl}}"],
+            path: [folderName, ":id"],
+            variable: [
+              {
+                key: "id",
+                value: "{{id}}",
+                description: `ID of the ${camelCaseName} to update`,
+              },
+            ],
+          },
+          body: {
+            mode: "raw",
+            raw: JSON.stringify(generateSampleRequestBody(fields), null, 2),
+          },
+        },
+      },
+      {
+        name: `Delete ${camelCaseName}`,
+        request: {
+          method: "DELETE",
+          url: {
+            raw: `{{baseUrl}}/${folderName}/:id`,
+            host: ["{{baseUrl}}"],
+            path: [folderName, ":id"],
+            variable: [
+              {
+                key: "id",
+                value: "{{id}}",
+                description: `ID of the ${camelCaseName} to delete`,
+              },
+            ],
+          },
+        },
+      },
+    ],
+    variable: [
+      {
+        key: "baseUrl",
+        value: baseUrl,
+      },
+    ],
+  };
+
+  return collection;
+}
+
+// Generate sample request body based on field definitions
+function generateSampleRequestBody(fields: FieldDefinition[]) {
+  const body: Record<string, any> = {};
+
+  fields.forEach((field) => {
+    if (field.isOptional) {
+      // Skip optional fields in sample
+      return;
+    }
+
+    switch (field.type.toLowerCase()) {
+      case "string":
+        body[field.name] = `Sample ${field.name}`;
+        break;
+      case "number":
+        body[field.name] = 123;
+        break;
+      case "boolean":
+        body[field.name] = true;
+        break;
+      case "date":
+        body[field.name] = new Date().toISOString();
+        break;
+      case "enum":
+        if (field.enumValues && field.enumValues.length > 0) {
+          body[field.name] = field.enumValues[0];
+        } else {
+          body[field.name] = "sample_enum_value";
+        }
+        break;
+      case "array":
+        if (
+          field.ref?.toLowerCase() === "object" &&
+          field.objectProperties?.length
+        ) {
+          body[field.name] = [
+            generateNestedObjectSample(field.objectProperties),
+          ];
+        } else {
+          body[field.name] = ["sample_item"];
+        }
+        break;
+      case "object":
+        if (field.objectProperties?.length) {
+          body[field.name] = generateNestedObjectSample(field.objectProperties);
+        } else {
+          body[field.name] = { key: "value" };
+        }
+        break;
+      case "objectid":
+      case "id":
+        body[field.name] = "507f1f77bcf86cd799439011";
+        break;
+      default:
+        body[field.name] = `Sample ${field.name}`;
+    }
+  });
+
+  return body;
+}
+
+// Helper function to generate sample for nested objects
+function generateNestedObjectSample(properties: FieldDefinition[]) {
+  const obj: Record<string, any> = {};
+
+  properties.forEach((prop) => {
+    switch (prop.type.toLowerCase()) {
+      case "string":
+        obj[prop.name] = `Sample ${prop.name}`;
+        break;
+      case "number":
+        obj[prop.name] = 123;
+        break;
+      case "boolean":
+        obj[prop.name] = true;
+        break;
+      case "date":
+        obj[prop.name] = new Date().toISOString();
+        break;
+      case "objectid":
+      case "id":
+        obj[prop.name] = "507f1f77bcf86cd799439011";
+        break;
+      default:
+        obj[prop.name] = `Sample ${prop.name}`;
+    }
+  });
+
+  return obj;
+}
+
+// Save Postman collection to file
+function savePostmanCollection(
+  folderName: string,
+  collection: any,
+  outputDir: string = "postman-collections"
+) {
+  // Create directory if it doesn't exist
+  const dirPath = path.join(process.cwd(), outputDir);
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+
+  const filePath = path.join(dirPath, `${folderName}-collection.json`);
+  fs.writeFileSync(filePath, JSON.stringify(collection, null, 2));
+
+  return filePath;
+}
+
+// Postman API integration functions
+async function updatePostmanCollection(
+  folderName: string,
+  camelCaseName: string,
+  fields: FieldDefinition[],
+  config: PostmanConfig,
+  baseUrl: string
+): Promise<string> {
+  if (!config.apiKey) {
+    throw new Error("Postman API key is required");
+  }
+
+  const collection = generatePostmanCollection(
+    folderName,
+    camelCaseName,
+    fields,
+    baseUrl
+  );
+  const headers = {
+    "X-API-Key": config.apiKey,
+    "Content-Type": "application/json",
+  };
+
+  // If we have a collection ID, update the existing collection
+  if (config.collectionId) {
+    const url = `https://api.getpostman.com/collections/${config.collectionId}`;
+    await axios.put(url, { collection }, { headers });
+    return `Updated existing Postman collection (ID: ${config.collectionId})`;
+  }
+  // Otherwise create a new collection in the specified workspace
+  else if (config.workspaceId) {
+    const url = `https://api.getpostman.com/collections?workspace=${config.workspaceId}`;
+    const response = await axios.post(url, { collection }, { headers });
+    const newCollectionId = response.data.collection.id;
+    return `Created new Postman collection (ID: ${newCollectionId}) in workspace (ID: ${config.workspaceId})`;
+  } else {
+    throw new Error("Either collection ID or workspace ID is required");
+  }
+}
+
+// Interface for Postman configuration
+interface PostmanConfig {
+  apiKey: string;
+  collectionId?: string;
+  workspaceId?: string;
+}
+
+// Save Postman configuration to a file
+function savePostmanConfig(config: PostmanConfig): void {
+  const configDir = path.join(process.cwd(), ".config");
+  if (!fs.existsSync(configDir)) {
+    fs.mkdirSync(configDir, { recursive: true });
+  }
+
+  const configPath = path.join(configDir, "postman.json");
+  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+}
+
+// Load Postman configuration from a file
+function loadPostmanConfig(): PostmanConfig | null {
+  const configPath = path.join(process.cwd(), ".config", "postman.json");
+  if (fs.existsSync(configPath)) {
+    try {
+      return JSON.parse(fs.readFileSync(configPath, "utf-8"));
+    } catch (error) {
+      console.warn(
+        "Could not load Postman configuration, file exists but is invalid"
+      );
+    }
+  }
+  return null;
+}
+
 // Update the main function to properly handle the command arguments
 function main() {
   try {
@@ -591,8 +899,30 @@ function main() {
       .option("-c, --config <path>", "Path to custom config file")
       .option("--modules-dir <path>", "Path to modules directory")
       .option("--routes-file <path>", "Path to routes file")
+      .option(
+        "--postman [dir]",
+        "Generate Postman collection file (optional directory path)"
+      )
+      .option(
+        "--postman-api-key <key>",
+        "Postman API key for direct integration"
+      )
+      .option("--postman-collection <id>", "Postman collection ID to update")
+      .option(
+        "--postman-workspace <id>",
+        "Postman workspace ID to create collection in"
+      )
+      .option(
+        "--save-postman-config",
+        "Save Postman API configuration for future use"
+      )
+      .option(
+        "--base-url <url>",
+        "Base URL for Postman requests",
+        "http://localhost:5000/api/v1"
+      )
       .allowUnknownOption(true) // Allow field definitions to be passed
-      .action((name: string, options: any) => {
+      .action(async (name: string, options: any) => {
         // Override config with CLI options
         if (options.modulesDir) {
           config.modulesDir = options.modulesDir;
@@ -612,7 +942,103 @@ function main() {
           return;
         }
 
-        createModule(name, fields, skipFiles, config);
+        const result = createModule(name, fields, skipFiles, config);
+
+        // Handle Postman integration
+        const baseUrl = options.baseUrl || "http://localhost:5000/api/v1";
+
+        // Check if we should use Postman API integration
+        if (
+          options.postmanApiKey ||
+          options.postmanCollection ||
+          options.postmanWorkspace
+        ) {
+          console.log(`\nUpdating Postman collection via API...`);
+
+          try {
+            // Load existing config if available
+            let postmanConfig = loadPostmanConfig() || { apiKey: "" };
+
+            // Override with command line options if provided
+            if (options.postmanApiKey) {
+              postmanConfig.apiKey = options.postmanApiKey;
+            }
+
+            if (options.postmanCollection) {
+              postmanConfig.collectionId = options.postmanCollection;
+            }
+
+            if (options.postmanWorkspace) {
+              postmanConfig.workspaceId = options.postmanWorkspace;
+            }
+
+            // Save config if requested
+            if (options.savePostmanConfig) {
+              savePostmanConfig(postmanConfig);
+              console.log("✅ Postman configuration saved for future use");
+            }
+
+            // Update the collection via API
+            const apiResult = await updatePostmanCollection(
+              result.folderName,
+              result.camelCaseName,
+              fields,
+              postmanConfig,
+              baseUrl
+            );
+
+            console.log(`✅ ${apiResult}`);
+          } catch (error) {
+            console.error(
+              "❌ Error updating Postman collection via API:",
+              //@ts-ignore
+              error.message
+            );
+            console.log(
+              "  Try using --postman-api-key, --postman-collection, and --postman-workspace options"
+            );
+          }
+        }
+        // Otherwise use the file-based approach if --postman is specified
+        else if (options.postman !== undefined) {
+          const postmanDir =
+            typeof options.postman === "string"
+              ? options.postman
+              : "postman-collections";
+
+          console.log(`\nGenerating Postman collection in ${postmanDir}...`);
+
+          try {
+            const collection = generatePostmanCollection(
+              result.folderName,
+              result.camelCaseName,
+              fields,
+              baseUrl
+            );
+
+            const filePath = savePostmanCollection(
+              result.folderName,
+              collection,
+              postmanDir
+            );
+            console.log(`✅ Postman collection saved to: ${filePath}`);
+            console.log(`\nTo use this collection in Postman:`);
+            console.log(`1. Open Postman`);
+            console.log(`2. Click "Import" button`);
+            console.log(`3. Select the file: ${filePath}`);
+            console.log(
+              `4. Click "Import" to add the collection to your workspace`
+            );
+            console.log(
+              `\nFor direct Postman integration without manual imports, use:`
+            );
+            console.log(
+              `siuuu-create ModuleName --postman-api-key YOUR_API_KEY --postman-collection COLLECTION_ID`
+            );
+          } catch (error) {
+            console.error("❌ Error generating Postman collection:", error);
+          }
+        }
       });
 
     program.parse();
@@ -628,7 +1054,7 @@ function createModule(
   fields: FieldDefinition[],
   skipFiles: string[],
   config: ModuleGeneratorConfig
-): void {
+): { folderName: string; camelCaseName: string } {
   const camelCaseName = toCamelCase(name);
   const folderName = camelCaseName.toLowerCase();
   const folderPath = path.join(process.cwd(), config.modulesDir, folderName);
@@ -639,7 +1065,7 @@ function createModule(
     console.log(`Created folder: ${folderName}`);
   } else {
     console.log(`Folder ${folderName} already exists.`);
-    return;
+    return { folderName: "", camelCaseName: "" };
   }
 
   // Generate content using template-based generators
@@ -668,6 +1094,9 @@ function createModule(
 
   // Add the new module to the central router file
   updateRouterFile(folderName, camelCaseName, config);
+
+  // Return module info for further processing
+  return { folderName, camelCaseName };
 }
 
 // Make sure the updateRouterFile function is properly implemented

@@ -1,12 +1,3 @@
-# Adding Enum Support to SIUUU Module Generator
-
-I see that the enum feature for field definitions isn't working correctly. Let's update the README to include documentation for this feature and explain how to use it properly.
-
-## Adding Enum Documentation to README
-
-Let's add a new example section to the README that specifically covers enum fields:
-
-````markdown:d:\module-generator\README.md
 # SIUUU Module Generator
 
 A powerful CLI tool for generating Express.js + Mongoose modules with TypeScript support. Quickly scaffold complete CRUD modules with proper type definitions, validation, and file handling.
@@ -24,12 +15,13 @@ A powerful CLI tool for generating Express.js + Mongoose modules with TypeScript
 - 🛡️ Built-in request validation middleware
 - 🎨 Clean and consistent code structure
 - 🔣 Support for enum fields with predefined values
+- 📮 Automatic Postman collection generation with dummy data
 
 ## Installation
 
 ```bash
 npm install siuuu-module-generator --global
-````
+```
 
 Or use with npx:
 
@@ -187,3 +179,59 @@ Contributions are welcome! Please read our contributing guidelines for details.
 ## License
 
 MIT
+
+## Postman Collection Generation
+
+There are two ways to integrate with Postman:
+
+### 1. File-Based (Manual Import)
+
+Generate Postman collections with proper endpoints and dummy data:
+
+```bash
+siuuu-create Product name:string price:number --postman
+```
+
+This creates a Postman collection file that you can manually import into Postman.
+
+### 2. Direct API Integration (Automatic)
+
+Automatically update your Postman collections without manual imports:
+
+```bash
+siuuu-create Product name:string price:number --postman-api-key YOUR_API_KEY --postman-collection YOUR_COLLECTION_ID
+```
+
+This directly updates your Postman collection via the Postman API.
+
+#### Setting Up Postman API Integration
+
+1. **Get your Postman API Key**:
+
+   - Go to [Postman API Keys](https://go.postman.co/settings/me/api-keys)
+   - Create a new API key with appropriate permissions
+
+2. **Find your Collection ID**:
+
+   - Open your collection in Postman
+   - The collection ID is in the URL: `https://go.postman.co/workspace/xxx/collection/YOUR_COLLECTION_ID`
+
+3. **Save your configuration for future use**:
+
+   ```bash
+   siuuu-create Product --postman-api-key YOUR_API_KEY --postman-collection YOUR_COLLECTION_ID --save-postman-config
+   ```
+
+4. **After saving configuration, you can simply use**:
+   ```bash
+   siuuu-create NewModule name:string description:string
+   ```
+   The module will be automatically added to your Postman collection.
+
+#### Creating New Collections
+
+To create a new collection in a workspace:
+
+```bash
+siuuu-create Product name:string price:number --postman-api-key YOUR_API_KEY --postman-workspace YOUR_WORKSPACE_ID
+```
