@@ -83,8 +83,8 @@ function generateObjectFromFields(
   return result;
 }
 
-// Create a Postman collection for a module
-export function generatePostmanCollection(
+// Generate module endpoints as a folder
+export function generateModuleEndpoints(
   moduleName: string,
   camelCaseName: string,
   fields: FieldDefinition[],
@@ -92,7 +92,6 @@ export function generatePostmanCollection(
 ): any {
   const folderName = moduleName.toLowerCase();
   const dummyData = generateObjectFromFields(fields);
-  const collectionId = uuidv4();
   const folderId = uuidv4();
 
   // Create endpoints for CRUD operations
@@ -218,23 +217,48 @@ export function generatePostmanCollection(
     },
   ];
 
-  // Create the collection structure
+  // Create the folder structure for this module
+  return {
+    name: `${camelCaseName} Endpoints`,
+    _postman_id: folderId,
+    item: endpoints,
+    description: `Endpoints for ${camelCaseName} module`,
+  };
+}
+
+// Create a Postman collection for a project with the first module
+export function generatePostmanCollection(
+  projectName: string,
+  moduleName: string,
+  camelCaseName: string,
+  fields: FieldDefinition[],
+  baseUrl: string = "http://localhost:5000/api/v1"
+): any {
+  const collectionId = uuidv4();
+
+  // Convert project name to uppercase with underscores for collection name
+  const upperCaseProjectName = projectName
+    .replace(/([a-z])([A-Z])/g, "$1_$2")
+    .toUpperCase();
+
+  // Generate the module endpoints
+  const moduleEndpoints = generateModuleEndpoints(
+    moduleName,
+    camelCaseName,
+    fields,
+    baseUrl
+  );
+
+  // Create the collection structure with project name
   const collection = {
     info: {
       _postman_id: collectionId,
-      name: `${camelCaseName} API`,
-      description: `API endpoints for ${camelCaseName} module`,
+      name: `${upperCaseProjectName} API`,
+      description: `API endpoints for ${projectName}`,
       schema:
         "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     },
-    item: [
-      {
-        name: `${camelCaseName} Endpoints`,
-        _postman_id: folderId,
-        item: endpoints,
-        description: `Endpoints for ${camelCaseName} module`,
-      },
-    ],
+    item: [moduleEndpoints],
     variable: [
       {
         key: "baseUrl",
@@ -249,7 +273,7 @@ export function generatePostmanCollection(
 
 // Save Postman collection to file
 export function savePostmanCollection(
-  moduleName: string,
+  projectName: string,
   collection: any,
   outputDir: string = "postman-collections"
 ): string {
@@ -258,9 +282,10 @@ export function savePostmanCollection(
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
+  // Use project name for the collection file name
   const filePath = path.join(
     outputDir,
-    `${moduleName.toLowerCase()}-collection.json`
+    `${projectName.toLowerCase()}-collection.json`
   );
   fs.writeFileSync(filePath, JSON.stringify(collection, null, 2));
 
@@ -269,18 +294,19 @@ export function savePostmanCollection(
 
 // Check if a collection exists
 export function collectionExists(
-  moduleName: string,
+  projectName: string,
   outputDir: string = "postman-collections"
 ): boolean {
   const filePath = path.join(
     outputDir,
-    `${moduleName.toLowerCase()}-collection.json`
+    `${projectName.toLowerCase()}-collection.json`
   );
   return fs.existsSync(filePath);
 }
 
 // Add endpoints to an existing collection
 export function addEndpointsToCollection(
+  projectName: string,
   moduleName: string,
   camelCaseName: string,
   fields: FieldDefinition[],
@@ -289,7 +315,7 @@ export function addEndpointsToCollection(
 ): string | null {
   const filePath = path.join(
     outputDir,
-    `${moduleName.toLowerCase()}-collection.json`
+    `${projectName.toLowerCase()}-collection.json`
   );
 
   if (!fs.existsSync(filePath)) {
@@ -337,7 +363,7 @@ export function addEndpointsToCollection(
 
     // Add new folder with endpoints to collection
     collection.item.push({
-      name: `${camelCaseName} Endpoints`,
+      name: `${camelCaseName.toUpperCase()} Endpoints`,
       _postman_id: folderId,
       item: endpoints,
       description: `Endpoints for ${camelCaseName} module`,

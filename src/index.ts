@@ -13,6 +13,7 @@ import { v4 as uuidv4 } from "uuid";
 interface ModuleGeneratorConfig {
   modulesDir: string;
   routesFile: string;
+  postman?: PostmanConfig;
 }
 
 // Field definition interface
@@ -56,6 +57,7 @@ function loadConfig(): ModuleGeneratorConfig {
       return {
         modulesDir: config.modulesDir || defaultConfig.modulesDir,
         routesFile: config.routesFile || defaultConfig.routesFile,
+        postman: config.postman || null,
       };
     }
   } catch (error) {
@@ -933,50 +935,28 @@ function loadPostmanConfig(): PostmanConfig | null {
 function main() {
   try {
     const config = loadConfig();
+    const postmanConfig = config.postman as PostmanConfig;
     const program = new Command();
 
     program
-      .name("create-module")
-      .description("Generate Express module files with Mongoose models")
+      .name("leo-create")
+      .description("Generate Express modules with Mongoose models")
       .version("1.0.8")
-      .argument("<name>", "Module name")
-      .option("-c, --config <path>", "Path to custom config file")
-      .option("--modules-dir <path>", "Path to modules directory")
-      .option("--routes-file <path>", "Path to routes file")
-      .option(
-        "--postman [dir]",
-        "Generate Postman collection file (optional directory path)"
-      )
-      .option(
-        "--postman-api-key <key>",
-        "Postman API key for direct integration"
-      )
-      .option("--postman-collection <id>", "Postman collection ID to update")
-      .option(
-        "--postman-workspace <id>",
-        "Postman workspace ID to create collection in"
-      )
+      .argument("<moduleName>", "Name of the module to generate")
+      .argument("[fields...]", "Field definitions in format name:type[:ref]")
+      .option("-d, --modules-dir <dir>", "Directory for modules")
+      .option("-r, --routes-file <file>", "Routes file path")
+      .option("-p, --postman", "Generate Postman collection")
+      .option("--postman-api-key <key>", "Postman API key")
+      .option("--postman-collection <id>", "Postman collection ID")
+      .option("--postman-workspace <id>", "Postman workspace ID")
+      .option("--postman-base-url <url>", "Base URL for API endpoints")
       .option(
         "--save-postman-config",
-        "Save Postman API configuration to package.json for future use"
+        "Save Postman configuration to package.json"
       )
-      .option(
-        "--base-url <url>",
-        "Base URL for Postman requests",
-        "http://localhost:5000/api/v1"
-      )
-      .allowUnknownOption(true) // Allow field definitions to be passed
-      .action(async (name: string, options: any) => {
-        // Override config with CLI options
-        if (options.modulesDir) {
-          config.modulesDir = options.modulesDir;
-        }
-        if (options.routesFile) {
-          config.routesFile = options.routesFile;
-        }
-
-        // Get field definitions from remaining arguments
-        const fieldArgs = program.args.slice(1);
+      .option("--project-name <name>", "Project name for Postman collection")
+      .action(async (moduleName: string, fieldArgs: string[], options: any) => {
         console.log("Processing field arguments:", fieldArgs);
 
         const { fields, skipFiles } = parseFieldDefinitions(fieldArgs);
@@ -986,144 +966,101 @@ function main() {
           return;
         }
 
-        const result = createModule(name, fields, skipFiles, config);
+        const result = createModule(moduleName, fields, skipFiles, config);
 
         // Handle Postman integration
-        const baseUrl = options.baseUrl || "http://localhost:5000/api/v1";
-
-        // Check if we should use Postman API integration
-        if (
-          options.postmanApiKey ||
-          options.postmanCollection ||
-          options.postmanWorkspace ||
-          options.savePostmanConfig
-        ) {
-          console.log(`\nUpdating Postman collection via API...`);
-
+        if (options.postman || options.postmanApiKey) {
           try {
-            // Load existing config if available
-            let postmanConfig = loadPostmanConfig() || { apiKey: "" };
+            // First try to load config from package.json or from the config we already loaded
+            let postmanConfig = config.postman || loadPostmanConfig();
 
-            // Override with command line options if provided
-            if (options.postmanApiKey) {
-              postmanConfig.apiKey = options.postmanApiKey;
+            // If no config exists or we have CLI options, create/update config
+            if (
+              !postmanConfig ||
+              options.postmanApiKey ||
+              options.postmanCollection ||
+              options.postmanWorkspace ||
+              options.postmanBaseUrl ||
+              options.projectName
+            ) {
+              postmanConfig = postmanConfig || {
+                apiKey: options.postmanApiKey || "",
+                collectionId: options.postmanCollection || "",
+                workspaceId: options.postmanWorkspace || "",
+                baseUrl: options.postmanBaseUrl || "",
+              };
+
+              // Use CLI options if provided, otherwise keep existing values
+              if (options.postmanApiKey)
+                postmanConfig.apiKey = options.postmanApiKey;
+              if (options.postmanCollection)
+                postmanConfig.collectionId = options?.postmanCollection;
+              if (options.postmanWorkspace)
+                postmanConfig.workspaceId = options.postmanWorkspace;
+              if (options.postmanBaseUrl)
+                postmanConfig.baseUrl = options.postmanBaseUrl;
+
+              // Save config if requested or if this is the first time
+              if (options.savePostmanConfig || !loadPostmanConfig()) {
+                savePostmanConfig(postmanConfig);
+                console.log("Postman configuration saved to package.json");
+              }
             }
 
-            if (options.postmanCollection) {
-              postmanConfig.collectionId = options.postmanCollection;
-            }
-
-            if (options.postmanWorkspace) {
-              postmanConfig.workspaceId = options.postmanWorkspace;
-            }
-
-            if (options.baseUrl) {
-              postmanConfig.baseUrl = options.baseUrl;
-            }
-
-            // Save config if requested
-            if (options.savePostmanConfig) {
-              savePostmanConfig(postmanConfig);
-              console.log(
-                "✅ Postman configuration saved to package.json for future use"
+            // If we have a valid config with API key, update/create collection
+            if (postmanConfig && postmanConfig.apiKey) {
+              const baseUrl =
+                postmanConfig.baseUrl || "http://localhost:5000/api/v1";
+              const apiResult = await updatePostmanCollection(
+                result.folderName,
+                result.camelCaseName,
+                fields,
+                postmanConfig,
+                baseUrl
               );
-            }
+              console.log(`✅ ${apiResult}`);
+            } else {
+              console.error("Postman API key is required for API integration");
 
-            // Update the collection via API
+              // Fallback to file-based approach
+              const postmanDir = "postman-collections";
+              console.log(
+                `\nGenerating Postman collection in ${postmanDir}...`
+              );
+
+              const collection = generatePostmanCollection(
+                result.folderName,
+                result.camelCaseName,
+                fields,
+                "http://localhost:5000/api/v1"
+              );
+
+              const filePath = savePostmanCollection(
+                result.folderName,
+                collection,
+                postmanDir
+              );
+              console.log(`✅ Postman collection saved to: ${filePath}`);
+            }
+          } catch (error) {
+            console.error("Error with Postman integration:", error);
+          }
+        } else if (config.postman && config.postman.apiKey) {
+          // Use configuration from package.json if available and not overridden by CLI options
+          try {
+            console.log("Using Postman configuration from package.json...");
+            const baseUrl =
+              config.postman.baseUrl || "http://localhost:5000/api/v1";
             const apiResult = await updatePostmanCollection(
               result.folderName,
               result.camelCaseName,
               fields,
-              postmanConfig,
+              config.postman,
               baseUrl
             );
-
             console.log(`✅ ${apiResult}`);
           } catch (error) {
-            console.error(
-              "❌ Error updating Postman collection via API:",
-              //@ts-ignore
-              error.message
-            );
-            console.log(
-              "  Try using --postman-api-key, --postman-collection, and --postman-workspace options"
-            );
-          }
-        }
-        // Otherwise use the file-based approach if --postman is specified
-        else if (options.postman !== undefined) {
-          const postmanDir =
-            typeof options.postman === "string"
-              ? options.postman
-              : "postman-collections";
-
-          console.log(`\nGenerating Postman collection in ${postmanDir}...`);
-
-          try {
-            const collection = generatePostmanCollection(
-              result.folderName,
-              result.camelCaseName,
-              fields,
-              baseUrl
-            );
-
-            const filePath = savePostmanCollection(
-              result.folderName,
-              collection,
-              postmanDir
-            );
-            console.log(`✅ Postman collection saved to: ${filePath}`);
-            console.log(`\nTo use this collection in Postman:`);
-            console.log(`1. Open Postman`);
-            console.log(`2. Click "Import" button`);
-            console.log(`3. Select the file: ${filePath}`);
-            console.log(
-              `4. Click "Import" to add the collection to your workspace`
-            );
-            console.log(
-              `\nFor direct Postman integration without manual imports, use:`
-            );
-            console.log(
-              `siuuu-create ModuleName --postman-api-key YOUR_API_KEY --postman-collection COLLECTION_ID`
-            );
-          } catch (error) {
-            console.error("❌ Error generating Postman collection:", error);
-          }
-        }
-        // Check if we have saved Postman config and should use it automatically
-        else {
-          const savedConfig = loadPostmanConfig();
-          if (
-            savedConfig &&
-            savedConfig.apiKey &&
-            (savedConfig.collectionId || savedConfig.workspaceId)
-          ) {
-            console.log(
-              `\nUsing saved Postman configuration from package.json...`
-            );
-            try {
-              const result = {
-                folderName: "",
-                camelCaseName: "",
-              };
-
-              let config = loadPostmanConfig() || { apiKey: "" };
-              const updateResult = await updatePostmanCollection(
-                result.folderName,
-                result.camelCaseName,
-                fields,
-                config,
-                savedConfig.baseUrl || baseUrl
-              );
-
-              console.log(`✅ ${updateResult}`);
-            } catch (error) {
-              console.error(
-                "❌ Error updating Postman collection via API:",
-                //@ts-ignore
-                error.message
-              );
-            }
+            console.error("Error with Postman integration from config:", error);
           }
         }
       });
