@@ -1,6 +1,6 @@
 {
   "name": "leo-module-generator",
-  "version": "2.0.5",
+  "version": "2.0.14",
   "description": "Generate Express modules with Mongoose models",
   "main": "dist/index.js",
   "bin": {
@@ -37,5 +37,16 @@
     "@types/handlebars": "^4.1.0",
     "@types/node": "^20.10.5",
     "typescript": "^5.3.3"
+  },
+  "moduleGenerator": {
+    "modulesDir": "src/app/modules",
+    "routesFile": "src/routes/index.ts",
+    "postman": {
+      "apiKey": "YOUR_POSTMAN_API_KEY",
+      "collectionId": "YOUR_COLLECTION_ID",
+      "workspaceId": "YOUR_WORKSPACE_ID",
+      "baseUrl": "http://localhost:5000/api/v1",
+      "projectName": "TEMPLATE"
+    }
   }
 }

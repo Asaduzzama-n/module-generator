@@ -757,7 +757,7 @@ function updatePostmanCollection(folderName, camelCaseName, fields, config, base
         // If we have a collection ID, update the existing collection
         if (config.collectionId) {
             const url = `https://api.getpostman.com/collections/${config.collectionId}`;
-            yield axios_1.default.put(url, { collection }, { headers });
+            yield axios_1.default.patch(url, { collection }, { headers });
             return `Updated existing Postman collection (ID: ${config.collectionId})`;
         }
         // Otherwise create a new collection in the specified workspace
@@ -886,7 +886,7 @@ function main() {
                         }
                     }
                     // If we have a valid config with API key, update/create collection
-                    if (postmanConfig && postmanConfig.apiKey) {
+                    if (postmanConfig === null || postmanConfig === void 0 ? void 0 : postmanConfig.apiKey) {
                         const baseUrl = postmanConfig.baseUrl || "http://localhost:5000/api/v1";
                         const apiResult = yield updatePostmanCollection(result.folderName, result.camelCaseName, fields, postmanConfig, baseUrl);
                         console.log(`✅ ${apiResult}`);

@@ -8,6 +8,7 @@ import axios from "axios";
 
 import Handlebars from "handlebars";
 import { v4 as uuidv4 } from "uuid";
+import { integrateModuleWithPostman } from "./utils/postmanApiIntegration";
 
 // Configuration interface
 interface ModuleGeneratorConfig {
@@ -861,7 +862,7 @@ async function updatePostmanCollection(
   // If we have a collection ID, update the existing collection
   if (config.collectionId) {
     const url = `https://api.getpostman.com/collections/${config.collectionId}`;
-    await axios.put(url, { collection }, { headers });
+    await axios.patch(url, { collection }, { headers });
     return `Updated existing Postman collection (ID: ${config.collectionId})`;
   }
   // Otherwise create a new collection in the specified workspace
@@ -1008,7 +1009,7 @@ function main() {
             }
 
             // If we have a valid config with API key, update/create collection
-            if (postmanConfig && postmanConfig.apiKey) {
+            if (postmanConfig?.apiKey) {
               const baseUrl =
                 postmanConfig.baseUrl || "http://localhost:5000/api/v1";
               const apiResult = await updatePostmanCollection(
@@ -1018,6 +1019,7 @@ function main() {
                 postmanConfig,
                 baseUrl
               );
+
               console.log(`✅ ${apiResult}`);
             } else {
               console.error("Postman API key is required for API integration");
