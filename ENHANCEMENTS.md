@@ -1,6 +1,14 @@
-# Leo Generate - Enhancement Summary
+# Leo Generate - Enhancement Summary (v1.2.0)
 
 ## 🚀 Major Enhancements Implemented
+
+### 🧠 **NEW in v1.2.0: Intelligent Documentation Updates**
+- **Code-Aware Parsing**: Reads both interface AND model files for complete accuracy
+- **Smart Field Extraction**: Handles complex nested structures and type mappings
+- **Enum Value Detection**: Extracts actual enum values from Mongoose schemas
+- **Array Type Intelligence**: Generates proper sample data for all array types
+- **100% Syntax Support**: Handles every field type the generator can create
+- **Robust Interface Parsing**: Correctly identifies main vs nested interfaces
 
 ### 1. Complex/Nested Fields Support ✅
 

@@ -1,0 +1,129 @@
+{
+  "info": {
+    "name": "Order API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer\": \"507f1f77bcf86cd799439011\",\n  \"items\": [\n    {\n      \"name\": \"sample_name\"\n    }\n  ],\n  \"status\": \"sample_status\",\n  \"shippingAddress\": \"sample_shippingAddress\",\n  \"totalAmount\": 123\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/order",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "order"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get All Orders",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/order",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "order"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Order by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/order/{{order_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "order",
+            "{{order_id}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Update Order",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer\": \"507f1f77bcf86cd799439011\",\n  \"items\": [\n    {\n      \"name\": \"sample_name\"\n    }\n  ],\n  \"status\": \"sample_status\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/order/{{order_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "order",
+            "{{order_id}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete Order",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/order/{{order_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "order",
+            "{{order_id}}"
+          ]
+        }
+      }
+    }
+  ]
+}

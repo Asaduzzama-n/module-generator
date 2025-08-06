@@ -45,6 +45,33 @@ export function generateInterfaceContent(
     }
   });
 
+  // Generate filterable interface
+  const filterableFields = fields.filter(
+    f => f.type.toLowerCase() === "string" || f.type.toLowerCase() === "enum"
+  );
+
+  if (filterableFields.length > 0) {
+    interfaceContent += `export interface I${camelCaseName}Filterables {\n`;
+    interfaceContent += `  searchTerm?: string;\n`;
+    
+    filterableFields.forEach((field) => {
+      let tsType = mapToTypeScriptType(field);
+      
+      // Use enum type if applicable
+      if (
+        field.type.toLowerCase() === "enum" &&
+        field.enumValues &&
+        field.enumValues.length > 0
+      ) {
+        tsType = `${toCamelCase(field.name)}Enum`;
+      }
+      
+      interfaceContent += `  ${field.name}?: ${tsType};\n`;
+    });
+    
+    interfaceContent += `}\n\n`;
+  }
+
   // Generate main interface
   interfaceContent += `export interface I${camelCaseName} {\n`;
   interfaceContent += `  _id: Types.ObjectId;\n`;

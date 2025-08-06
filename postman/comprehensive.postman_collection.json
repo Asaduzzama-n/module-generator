@@ -1,0 +1,129 @@
+{
+  "info": {
+    "name": "Comprehensive API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Comprehensive",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"sample_name\",\n  \"description\": \"sample_description\",\n  \"price\": 123,\n  \"isActive\": true,\n  \"createdDate\": \"2025-08-06T00:25:14.612Z\",\n  \"requiredField\": \"sample_requiredField\",\n  \"optionalField\": \"sample_optionalField\",\n  \"status\": \"active\",\n  \"category\": \"Electronics\",\n  \"author\": \"507f1f77bcf86cd799439011\",\n  \"assignedTo\": \"507f1f77bcf86cd799439011\",\n  \"tags\": [\n    \"sample_tags_item\"\n  ],\n  \"scores\": [\n    123\n  ],\n  \"flags\": [\n    true\n  ],\n  \"dates\": [\n    \"2025-08-06T00:25:14.613Z\"\n  ],\n  \"categories\": [\n    \"507f1f77bcf86cd799439011\"\n  ],\n  \"collaborators\": [\n    \"507f1f77bcf86cd799439011\"\n  ],\n  \"variants\": [\n    {\n      \"size\": \"sample_size\",\n      \"color\": \"sample_color\",\n      \"price\": 123,\n      \"stock\": 123,\n      \"isAvailable\": true\n    }\n  ],\n  \"comments\": [\n    {\n      \"author\": \"507f1f77bcf86cd799439011\",\n      \"content\": \"sample_content\",\n      \"createdAt\": \"2025-08-06T00:25:14.614Z\",\n      \"likes\": 123\n    }\n  ],\n  \"address\": {\n    \"street\": \"sample_street\",\n    \"city\": \"sample_city\",\n    \"zipCode\": \"sample_zipCode\",\n    \"country\": \"sample_country\"\n  },\n  \"metadata\": \"sample_metadata\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/comprehensive",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "comprehensive"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get All Comprehensives",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/comprehensive",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "comprehensive"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Comprehensive by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/comprehensive/{{comprehensive_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "comprehensive",
+            "{{comprehensive_id}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Update Comprehensive",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"sample_name\",\n  \"description\": \"sample_description\",\n  \"price\": 123\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/comprehensive/{{comprehensive_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "comprehensive",
+            "{{comprehensive_id}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete Comprehensive",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/comprehensive/{{comprehensive_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "comprehensive",
+            "{{comprehensive_id}}"
+          ]
+        }
+      }
+    }
+  ]
+}

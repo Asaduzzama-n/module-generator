@@ -1,10 +1,16 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateRouteContent = void 0;
-const generateRouteContent = (camelCaseName, folderName, fields) => {
-    // Check if there are any file/image fields
-    const hasImageField = fields.some((field) => field.name === "image" || field.name === "images" || field.name === "media" || field.type.toLowerCase() === "image");
-    return `import express from 'express';
+import { FieldDefinition } from "../types";
+
+const generateRouteContent = (
+  camelCaseName: string,
+  folderName: string,
+  fields: FieldDefinition[]
+): string => {
+  // Check if there are any file/image fields
+  const hasImageField = fields.some(
+    (field) => field.name === "image" || field.name === "images" || field.name === "media" || field.type.toLowerCase() === "image"
+  );
+
+  return `import express from 'express';
 import { ${camelCaseName}Controller } from './${folderName}.controller';
 import { ${camelCaseName}Validations } from './${folderName}.validation';
 import validateRequest from '../../middleware/validateRequest';
@@ -65,4 +71,5 @@ router.delete(
 
 export const ${camelCaseName}Routes = router;`;
 };
-exports.generateRouteContent = generateRouteContent;
+
+export { generateRouteContent };

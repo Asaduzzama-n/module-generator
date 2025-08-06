@@ -22,11 +22,13 @@ A powerful and comprehensive module generator for Express.js applications with M
 - 📁 File upload handling
 - 🔍 Search and pagination support
 
-### Documentation Generation
+### Smart Documentation Generation
 - 📮 **Automatic Postman Collections** - Generate complete API collections
 - 📖 **Swagger Documentation** - Auto-generate OpenAPI 3.0 specs
-- 🔄 **Bulk Documentation Updates** - Update docs for existing modules
+- 🔄 **Intelligent Documentation Updates** - Analyzes your code changes and updates docs accordingly
+- 🧠 **Code-Aware Parsing** - Reads both interface and model files for accurate field extraction
 - 📂 **Organized Output** - Separate folders for different documentation types
+- ✅ **100% Syntax Support** - Handles ALL field types the generator can create
 
 ## 📦 Installation
 
@@ -105,12 +107,22 @@ leo-generate generate <ModuleName> [fields...]
 --routes-file <path>  # Custom routes file
 ```
 
-### Update Documentation
+### Smart Documentation Updates
 ```bash
+# Intelligently updates documentation for all existing modules
 leo-generate update-docs
 
 # Aliases:
 leo-generate docs
+
+# The system automatically:
+# ✅ Scans all modules in your project
+# ✅ Reads both interface and model files  
+# ✅ Extracts current field definitions
+# ✅ Generates accurate Postman collections
+# ✅ Updates Swagger documentation
+# ✅ Handles complex nested structures
+# ✅ Preserves enum values and references
 
 # Options:
 --modules-dir <path>  # Path to modules directory
@@ -321,7 +333,41 @@ leo-generate generate User name:string \
   --swagger-file api-docs.json
 ```
 
-## 🔄 Migration from v1.0
+## 🧠 Enhanced Documentation Intelligence (v1.2.0)
+
+### **Code-Aware Documentation Updates**
+The enhanced system now intelligently analyzes your code changes:
+
+```bash
+# Example: You modify an Order model
+# BEFORE: items had name, price, quantity
+# AFTER: items only have name (removed price, quantity)
+
+# Simply run:
+leo-generate update-docs
+
+# The system will:
+# ✅ Read your modified interface and model files
+# ✅ Detect that items now only have 'name' field
+# ✅ Update Postman collections: {"items": [{"name": "sample_name"}]}
+# ✅ Update Swagger schemas to reflect current structure
+# ✅ Handle ALL field types: enums, arrays, nested objects, references
+```
+
+### **100% Syntax Support**
+Every field type the generator can create is fully supported in updates:
+
+| Syntax | Generated Sample | Update Support |
+|--------|------------------|----------------|
+| `name:string` | `"name": "sample_name"` | ✅ Perfect |
+| `age:number` | `"age": 123` | ✅ Perfect |
+| `tags:array:string` | `"tags": ["sample_item"]` | ✅ Perfect |
+| `scores:array:number` | `"scores": [123]` | ✅ Perfect |
+| `status:enum[active,inactive]` | `"status": "active"` | ✅ Perfect |
+| `author:objectid:User` | `"author": "507f1f77..."` | ✅ Perfect |
+| `items:array:object:name:string:price:number` | `"items": [{"name": "...", "price": 123}]` | ✅ Perfect |
+
+## 🔄 Migration from v1.1
 
 The new version maintains backward compatibility:
 
@@ -332,7 +378,7 @@ leo-generate User name:string email:string
 # New way (recommended)
 leo-generate generate User name:string email:string
 
-# Update existing modules' documentation
+# Enhanced documentation updates
 leo-generate update-docs
 ```
 

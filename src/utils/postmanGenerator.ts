@@ -162,6 +162,8 @@ function generateSampleData(fields: FieldDefinition[]): any {
             case "enum":
                 if (field.enumValues && field.enumValues.length > 0) {
                     sampleData[field.name] = field.enumValues[0];
+                } else {
+                    sampleData[field.name] = `sample_${field.name}`;
                 }
                 break;
             case "array":
@@ -169,6 +171,24 @@ function generateSampleData(fields: FieldDefinition[]): any {
                     sampleData[field.name] = [generateSampleData(field.objectProperties)];
                 } else if (field.arrayItemType?.toLowerCase() === "objectid") {
                     sampleData[field.name] = ["507f1f77bcf86cd799439011"];
+                } else if (field.arrayItemType) {
+                    // Generate proper sample data based on array item type
+                    switch (field.arrayItemType.toLowerCase()) {
+                        case "string":
+                            sampleData[field.name] = [`sample_${field.name}_item`];
+                            break;
+                        case "number":
+                            sampleData[field.name] = [123];
+                            break;
+                        case "boolean":
+                            sampleData[field.name] = [true];
+                            break;
+                        case "date":
+                            sampleData[field.name] = [new Date().toISOString()];
+                            break;
+                        default:
+                            sampleData[field.name] = [`sample_${field.name}_item`];
+                    }
                 } else {
                     sampleData[field.name] = [`sample_${field.name}_item`];
                 }

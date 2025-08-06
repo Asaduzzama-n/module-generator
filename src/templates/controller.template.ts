@@ -1,164 +1,118 @@
 import { FieldDefinition } from "../types";
 
-const generateControllerContent = (
+export const generateControllerContent = (
   camelCaseName: string,
   folderName: string,
   fields: FieldDefinition[]
 ): string => {
   // Check if there are any file/image fields
   const hasImageField = fields.some(
-    (field) => field.name === "image" || field.type.toLowerCase() === "image"
+    (field) => field.name === "image" || field.name === "images" || field.name === "media" || field.type.toLowerCase() === "image"
   );
 
-  return `import { Request, Response, NextFunction } from 'express';
+  // Generate filterable fields (string and enum types)
+  const filterableFields = fields.filter(
+    f => f.type.toLowerCase() === "string" || f.type.toLowerCase() === "enum"
+  );
+
+  return `import { Request, Response } from 'express';
 import { ${camelCaseName}Services } from './${folderName}.service';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { StatusCodes } from 'http-status-codes';
 import pick from '../../../shared/pick';
-import { paginationFields } from '../../../constants/pagination';
+import { ${folderName}Filterables } from './${folderName}.constants';
+import { paginationFields } from '../../../interfaces/pagination';
 
-// Filter options for queries
-const ${folderName}FilterableFields = [${fields
-  .filter(f => f.type.toLowerCase() === "string" || f.type.toLowerCase() === "enum")
-  .map(f => `'${f.name}'`)
-  .join(", ")}];
+const create${camelCaseName} = catchAsync(async (req: Request, res: Response) => {
+  ${
+    hasImageField
+      ? `const { images, media, ...${folderName}Data } = req.body;
+  
+  if (images && images.length > 0) {
+    ${folderName}Data.images = images;
+  }
+  
+  if (media && media.length > 0) {
+    ${folderName}Data.media = media;
+  }`
+      : `const ${folderName}Data = req.body;`
+  }
 
-const create${camelCaseName} = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    ${
-      hasImageField
-        ? `const { image, ...${folderName}Data } = req.body;
-    if (image?.length > 0) {
-      ${folderName}Data.image = image[0];
-    }`
-        : `const ${folderName}Data = req.body;`
-    }
-    
-    const result = await ${camelCaseName}Services.create${camelCaseName}(${folderName}Data);
-    
-    sendResponse(res, {
-      statusCode: StatusCodes.CREATED,
-      success: true,
-      message: '${camelCaseName} created successfully',
-      data: result,
-    });
-  },
-);
+  const result = await ${camelCaseName}Services.create${camelCaseName}(
+    req.user!,
+    ${folderName}Data
+  );
 
-const update${camelCaseName} = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const { id } = req.params;
-    ${
-      hasImageField
-        ? `const { image, ...${folderName}Data } = req.body;
-    if (image?.length > 0) {
-      ${folderName}Data.image = image[0];
-    }`
-        : `const ${folderName}Data = req.body;`
-    }
-    
-    const result = await ${camelCaseName}Services.update${camelCaseName}(id, ${folderName}Data);
-    
-    sendResponse(res, {
-      statusCode: StatusCodes.OK,
-      success: true,
-      message: '${camelCaseName} updated successfully',
-      data: result,
-    });
-  },
-);
+  sendResponse(res, {
+    statusCode: StatusCodes.CREATED,
+    success: true,
+    message: '${camelCaseName} created successfully',
+    data: result,
+  });
+});
 
-const delete${camelCaseName} = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const { id } = req.params;
-    const result = await ${camelCaseName}Services.delete${camelCaseName}(id);
-    
-    sendResponse(res, {
-      statusCode: StatusCodes.OK,
-      success: true,
-      message: '${camelCaseName} deleted successfully',
-      data: result,
-    });
-  },
-);
+const update${camelCaseName} = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const ${folderName}Data = req.body;
 
-const get${camelCaseName} = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const { id } = req.params;
-    const result = await ${camelCaseName}Services.get${camelCaseName}(id);
-    
-    sendResponse(res, {
-      statusCode: StatusCodes.OK,
-      success: true,
-      message: '${camelCaseName} retrieved successfully',
-      data: result,
-    });
-  },
-);
+  const result = await ${camelCaseName}Services.update${camelCaseName}(id, ${folderName}Data);
 
-const getAll${camelCaseName}s = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    // Extract pagination and filtering options
-    const paginationOptions = pick(req.query, paginationFields);
-    const filters = pick(req.query, ${folderName}FilterableFields);
-    
-    // Add search functionality
-    const searchOptions = {
-      ...paginationOptions,
-      search: req.query.search as string,
-      sortBy: req.query.sortBy as string || 'createdAt',
-      sortOrder: req.query.sortOrder as 'asc' | 'desc' || 'desc'
-    };
-    
-    const result = await ${camelCaseName}Services.getAll${camelCaseName}s(searchOptions);
-    
-    sendResponse(res, {
-      statusCode: StatusCodes.OK,
-      success: true,
-      message: '${camelCaseName}s retrieved successfully',
-      meta: result.pagination,
-      data: result.data,
-    });
-  },
-);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: '${camelCaseName} updated successfully',
+    data: result,
+  });
+});
 
-// Additional controller methods
-const count${camelCaseName}s = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const filters = pick(req.query, ${folderName}FilterableFields);
-    const result = await ${camelCaseName}Services.count${camelCaseName}s(filters);
-    
-    sendResponse(res, {
-      statusCode: StatusCodes.OK,
-      success: true,
-      message: '${camelCaseName} count retrieved successfully',
-      data: { count: result },
-    });
-  },
-);
+const getSingle${camelCaseName} = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await ${camelCaseName}Services.getSingle${camelCaseName}(id);
 
-const check${camelCaseName}Exists = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const { id } = req.params;
-    const result = await ${camelCaseName}Services.exists${camelCaseName}({ _id: id });
-    
-    sendResponse(res, {
-      statusCode: StatusCodes.OK,
-      success: true,
-      message: '${camelCaseName} existence checked',
-      data: { exists: result },
-    });
-  },
-);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: '${camelCaseName} retrieved successfully',
+    data: result,
+  });
+});
+
+const getAll${camelCaseName}s = catchAsync(async (req: Request, res: Response) => {
+  const filterables = pick(req.query, ${folderName}Filterables);
+  const pagination = pick(req.query, paginationFields);
+
+  const result = await ${camelCaseName}Services.getAll${camelCaseName}s(
+    req.user!,
+    filterables,
+    pagination
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: '${camelCaseName}s retrieved successfully',
+    data: result,
+  });
+});
+
+const delete${camelCaseName} = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await ${camelCaseName}Services.delete${camelCaseName}(id);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: '${camelCaseName} deleted successfully',
+    data: result,
+  });
+});
 
 export const ${camelCaseName}Controller = {
   create${camelCaseName},
   update${camelCaseName},
-  delete${camelCaseName},
-  get${camelCaseName},
+  getSingle${camelCaseName},
   getAll${camelCaseName}s,
-  count${camelCaseName}s,
-  check${camelCaseName}Exists,
+  delete${camelCaseName},
 };`;
 };

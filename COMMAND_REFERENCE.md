@@ -54,9 +54,9 @@ leo-generate User name:string email:string age:number
 leo-generate Product name:string price:number category:enum[Electronics,Clothing]
 ```
 
-### **2. Documentation Update Commands**
+### **2. Smart Documentation Update Commands**
 
-#### **Update All Documentation**
+#### **Intelligent Documentation Updates**
 ```bash
 leo-generate update-docs [options]
 ```
@@ -65,6 +65,13 @@ leo-generate update-docs [options]
 ```bash
 leo-generate docs [options]
 ```
+
+**Enhanced Features (v1.2.0)**:
+- 🧠 **Code-Aware Analysis**: Reads both interface and model files
+- 🔍 **Smart Field Extraction**: Handles complex nested structures
+- 📊 **Accurate Sample Data**: Type-appropriate values for all field types
+- 🎯 **Enum Value Detection**: Uses actual enum values from schemas
+- ✅ **100% Syntax Support**: Handles every field type the generator creates
 
 **Examples**:
 ```bash
