@@ -1,0 +1,8 @@
+{
+  "name": "test-project",
+  "version": "1.0.0",
+  "moduleGenerator": {
+    "modulesDir": "src/app/modules",
+    "routesFile": "src/routes/index.ts"
+  }
+}

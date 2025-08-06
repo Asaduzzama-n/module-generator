@@ -1,0 +1,300 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API Documentation",
+    "version": "1.0.0",
+    "description": "Generated API documentation"
+  },
+  "paths": {
+    "/testuser": {
+      "post": {
+        "tags": [
+          "Testuser"
+        ],
+        "summary": "Create a new Testuser",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestuserCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Testuser created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testuser"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Testuser"
+        ],
+        "summary": "Get all Testusers",
+        "responses": {
+          "200": {
+            "description": "List of Testusers retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Testuser"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/testuser/{id}": {
+      "get": {
+        "tags": [
+          "Testuser"
+        ],
+        "summary": "Get Testuser by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Testuser ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Testuser retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testuser"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Testuser not found"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Testuser"
+        ],
+        "summary": "Update Testuser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Testuser ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestuserUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Testuser updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testuser"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Testuser not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Testuser"
+        ],
+        "summary": "Delete Testuser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Testuser ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Testuser deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testuser"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Testuser not found"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Testuser": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "MongoDB ObjectId"
+          },
+          "name": {
+            "type": "string",
+            "description": "name field"
+          },
+          "email": {
+            "type": "string",
+            "description": "email field"
+          },
+          "age": {
+            "type": "number",
+            "description": "age field"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": [
+          "_id"
+        ]
+      },
+      "TestuserCreate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name field"
+          },
+          "email": {
+            "type": "string",
+            "description": "email field"
+          },
+          "age": {
+            "type": "number",
+            "description": "age field"
+          }
+        },
+        "required": []
+      },
+      "TestuserUpdate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name field"
+          },
+          "email": {
+            "type": "string",
+            "description": "email field"
+          },
+          "age": {
+            "type": "number",
+            "description": "age field"
+          }
+        }
+      }
+    }
+  }
+}

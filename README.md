@@ -1,67 +1,308 @@
-# Adding Enum Support to SIUUU Module Generator
+# Leo Generate - Enhanced Module Generator
 
-I see that the enum feature for field definitions isn't working correctly. Let's update the README to include documentation for this feature and explain how to use it properly.
+A powerful and comprehensive module generator for Express.js applications with Mongoose models, automatic Postman collections, and Swagger documentation.
 
-## Adding Enum Documentation to README
+## 🚀 Features
 
-Let's add a new example section to the README that specifically covers enum fields:
-
-````markdown:d:\module-generator\README.md
-# SIUUU Module Generator
-
-A powerful CLI tool for generating Express.js + Mongoose modules with TypeScript support. Quickly scaffold complete CRUD modules with proper type definitions, validation, and file handling.
-
-## Features
-
-- 🚀 Generate complete module structure with a single command
-- 📝 TypeScript-first approach with proper type definitions
-- 🔄 Automatic CRUD operations with proper error handling
-- 🔍 Built-in Zod validation schema generation
-- 📁 Smart file upload handling for image and media fields
-- 🔗 Automatic route registration in central router
-- 🎯 Support for complex data structures (nested objects, arrays)
-- ⚙️ Highly configurable via package.json or CLI options
-- 🛡️ Built-in request validation middleware
+### Core Module Generation
+- 📁 Complete folder structure with TypeScript support
+- 🧩 Advanced TypeScript interfaces with nested types
+- 🔄 Mongoose models with complex schema support
+- 🎮 Production-ready Express controllers with pagination
+- 🛠️ Enhanced service layer with error handling
+- 🛣️ RESTful routes with validation middleware
+- ✅ Zod validation with nested object support
 - 🎨 Clean and consistent code structure
-- 🔣 Support for enum fields with predefined values
 
-## Installation
+### Advanced Field Support
+- 🔣 Enum fields with predefined values
+- 🏗️ Complex nested objects and arrays
+- 📊 Array of objects with defined structures
+- 🔗 ObjectId references with auto-population
+- 📁 File upload handling
+- 🔍 Search and pagination support
+
+### Documentation Generation
+- 📮 **Automatic Postman Collections** - Generate complete API collections
+- 📖 **Swagger Documentation** - Auto-generate OpenAPI 3.0 specs
+- 🔄 **Bulk Documentation Updates** - Update docs for existing modules
+- 📂 **Organized Output** - Separate folders for different documentation types
+
+## 📦 Installation
 
 ```bash
-npm install siuuu-module-generator --global
-````
+npm install leo-generate --global
+```
 
 Or use with npx:
 
 ```bash
-npx siuuu-module-generator
+npx leo-generate
 ```
 
-## Quick Start
+## 🎯 Quick Start
 
-Generate a basic module:
+### Basic Module Generation
 
 ```bash
-siuuu-create User name:string email:string age:number
+# Primary command (recommended)
+leo-generate generate User name:string email:string age:number
+
+# Short alias
+leo-generate g User name:string email:string
+
+# Legacy support (still works)
+leo-generate User name:string email:string age:number
 ```
+
+## 📋 **Quick Command Reference**
+
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `generate <name> [fields...]` | Create new module | `leo-generate generate User name:string email:string` |
+| `g <name> [fields...]` | Short alias for generate | `leo-generate g Product name:string price:number` |
+| `update-docs` | Update all documentation | `leo-generate update-docs` |
+| `docs` | Short alias for update-docs | `leo-generate docs` |
+| `<name> [fields...]` | Legacy syntax | `leo-generate User name:string email:string` |
+
+### **Common Options**
+- `--no-postman` - Skip Postman collection generation
+- `--no-swagger` - Skip Swagger documentation generation  
+- `--postman-dir <path>` - Custom Postman output directory
+- `--swagger-file <path>` - Custom Swagger file path
+- `--modules-dir <path>` - Custom modules directory
 
 This creates:
 
 ```
 src/app/modules/user/
-├── user.interface.ts   // TypeScript interfaces
-├── user.model.ts      // Mongoose model
-├── user.controller.ts // CRUD controllers
-├── user.service.ts    // Business logic
-├── user.route.ts      // Express routes
-├── user.validation.ts // Zod validation
+├── user.interface.ts   // Enhanced TypeScript interfaces
+├── user.model.ts      // Mongoose model with validation
+├── user.controller.ts // Production-ready controllers
+├── user.service.ts    // Enhanced service layer
+├── user.route.ts      // RESTful routes
+├── user.validation.ts // Zod validation schemas
 └── user.constants.ts  // Constants
+
+postman/
+└── user.postman_collection.json  // Auto-generated Postman collection
+
+swagger.json  // Updated with new endpoints
 ```
 
-## Configuration
+## 🛠️ Commands
+
+### Generate Module
+```bash
+leo-generate generate <ModuleName> [fields...]
+
+# Options:
+--no-postman          # Skip Postman collection generation
+--no-swagger          # Skip Swagger documentation
+--postman-dir <path>  # Custom Postman output directory
+--swagger-file <path> # Custom Swagger file path
+--modules-dir <path>  # Custom modules directory
+--routes-file <path>  # Custom routes file
+```
+
+### Update Documentation
+```bash
+leo-generate update-docs
+
+# Aliases:
+leo-generate docs
+
+# Options:
+--modules-dir <path>  # Path to modules directory
+--no-postman          # Skip Postman updates
+--no-swagger          # Skip Swagger updates
+--postman-dir <path>  # Custom Postman output directory
+--swagger-file <path> # Custom Swagger file path
+```
+
+## 🏗️ Advanced Examples
+
+### Complex Nested Structures
+
+```bash
+# E-commerce Order with nested items
+leo-generate generate Order \
+  customer:objectid:User \
+  items:array:object:name:string:price:number:quantity:number \
+  status:enum[pending,processing,shipped,delivered] \
+  shippingAddress:object:street:string:city:string:zipCode:string \
+  totalAmount:number \
+  createdAt:date
+```
+
+### Blog System with References
+
+```bash
+# Blog post with author reference and tags
+leo-generate generate Post \
+  title!:string \
+  content!:string \
+  author:objectid:User \
+  tags:array:string \
+  status:enum[draft,published,archived] \
+  publishedAt?:date \
+  viewCount:number
+```
+
+### Product Catalog with Variants
+
+```bash
+# Product with multiple variants
+leo-generate generate Product \
+  name!:string \
+  description:string \
+  category:enum[Electronics,Clothing,Books,Home] \
+  variants:array:object:size:string:color:string:price:number:stock:number \
+  images:array:string \
+  isActive:boolean
+```
+
+## 📋 Field Types & Syntax
+
+### Basic Types
+```bash
+name:string          # String field
+age:number           # Number field
+isActive:boolean     # Boolean field
+createdAt:date       # Date field
+```
+
+### Modifiers
+```bash
+name!:string         # Required field
+email?:string        # Optional field
+```
+
+### Enums
+```bash
+status:enum[active,inactive,pending]
+role:enum[admin,user,moderator]
+```
+
+### References
+```bash
+author:objectid:User              # Single reference
+categories:array:objectid:Category # Array of references
+```
+
+### Complex Structures
+```bash
+# Array of objects
+items:array:object:name:string:price:number:quantity:number
+
+# Nested object
+address:object:street:string:city:string:country:string
+
+# Mixed arrays
+tags:array:string
+scores:array:number
+```
+
+## 🎮 Generated API Features
+
+### Enhanced Controllers
+- ✅ Pagination support with meta information
+- 🔍 Search functionality across string fields
+- 📊 Sorting with customizable fields
+- 🛡️ Input validation and sanitization
+- 📁 File upload handling
+- ⚡ Error handling with proper HTTP status codes
+
+### Production-Ready Services
+- 🔒 ObjectId validation
+- 🔄 Auto-population of references
+- 🗑️ Proper file cleanup on deletion
+- 📈 Optimized queries with lean()
+- 🔍 Advanced search with regex
+- 📊 Aggregation support
+
+### API Endpoints
+For a module named "Product":
+
+```
+POST   /api/v1/products              # Create product
+GET    /api/v1/products              # Get all (with pagination, search, sort)
+GET    /api/v1/products/:id          # Get single product
+PATCH  /api/v1/products/:id          # Update product
+DELETE /api/v1/products/:id          # Delete product
+
+Query Parameters for GET /api/v1/products:
+?page=1&limit=10&search=keyword&sortBy=createdAt&sortOrder=desc
+```
+
+## 📮 Postman Integration
+
+### Auto-Generated Collections
+- 🔄 Complete CRUD operations
+- 📝 Sample request bodies with realistic data
+- 🔗 Environment variables for base URL
+- 📊 Proper HTTP methods and headers
+- 🎯 Parameter examples for all endpoints
+
+### Collection Structure
+```json
+{
+  "info": {
+    "name": "Product API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Product",
+      "request": {
+        "method": "POST",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"sample_name\",\n  \"price\": 123\n}"
+        }
+      }
+    }
+  ]
+}
+```
+
+## 📖 Swagger Integration
+
+### Auto-Generated Documentation
+- 📋 OpenAPI 3.0 specification
+- 🏷️ Proper tags and descriptions
+- 📝 Request/response schemas
+- 🔍 Parameter documentation
+- ✅ Validation rules included
+- 🔄 Automatic updates on module changes
+
+### Schema Generation
+```yaml
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: MongoDB ObjectId
+        name:
+          type: string
+          description: name field
+        price:
+          type: number
+          description: price field
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - _id
+        - name
+```
+
+## ⚙️ Configuration
 
 ### Via package.json
-
 ```json
 {
   "moduleGenerator": {
@@ -71,119 +312,98 @@ src/app/modules/user/
 }
 ```
 
-### Via CLI
+### Via CLI Options
+```bash
+leo-generate generate User name:string \
+  --modules-dir src/modules \
+  --routes-file src/routes.ts \
+  --postman-dir collections \
+  --swagger-file api-docs.json
+```
+
+## 🔄 Migration from v1.0
+
+The new version maintains backward compatibility:
 
 ```bash
-siuuu-create User --modules-dir src/modules --routes-file src/routes.ts
+# Old way (still works)
+leo-generate User name:string email:string
+
+# New way (recommended)
+leo-generate generate User name:string email:string
+
+# Update existing modules' documentation
+leo-generate update-docs
 ```
 
-## Examples
+## 🎯 Best Practices
 
-### Basic CRUD Module
-
-```bash
-siuuu-create Product name!:string price!:number description?:string
-```
-
-### With File Uploads
-
-```bash
-siuuu-create Profile name:string avatar:string photos:array:string
-```
-
-### With References
-
-```bash
-siuuu-create Order user:objectid:User products:array:objectid:Product
-```
-
-### With Enum Values
-
-```bash
-siuuu-create Category label:enum[CII,CAA,OTHER] status:enum[ACTIVE,INACTIVE]
-```
-
-This creates a module with enum fields that are restricted to the specified values in both the interface and model.
-
-### Complex Nested Structure
-
-```bash
-siuuu-create Survey title:string questions:array:object:text:string:options:array:string
-```
-
-### Skip Specific Files
-
-```bash
-siuuu-create User name:string --skip validation constants
-```
-
-## Generated Code Features
-
-### Controllers
-
-- Full CRUD operations
-- File upload handling
-- Proper error handling
-- Response formatting
-
-### Routes
-
-- RESTful endpoints
-- Validation middleware
-- File upload middleware
-- Authentication hooks
-
-### Validation
-
-- Request body validation
-- Type checking
-- Custom error messages
-- Required/optional fields
-
-## API Endpoints
-
-For a module named "Product":
-
-```
-POST   /api/v1/products      - Create product
-GET    /api/v1/products      - Get all products
-GET    /api/v1/products/:id  - Get single product
-PATCH  /api/v1/products/:id  - Update product
-DELETE /api/v1/products/:id  - Delete product
-```
-
-## Best Practices
-
+### Module Design
 1. Use singular names for modules (e.g., "User" not "Users")
-2. Mark required fields with "!"
+2. Mark required fields with "!" suffix
 3. Use descriptive field names
-4. Follow naming conventions for file fields (image, file, media)
-5. For enum fields, use the format `fieldname:enum[VALUE1,VALUE2,VALUE3]`
+4. Group related fields logically
+5. Consider using enums for status fields
 
-## Common Patterns
-
-### File Upload Module
-
+### Field Naming
 ```bash
-siuuu-create Media title:string description:string file:string type:string
+# Good
+leo-generate generate User name!:string email!:string status:enum[active,inactive]
+
+# Avoid
+leo-generate generate Users NAME:string Email:string stat:string
 ```
 
-### Enum Field Module
-
+### Complex Structures
 ```bash
-siuuu-create Role name:string permission:enum[READ,WRITE,ADMIN]
+# Prefer structured objects over loose data
+leo-generate generate Order \
+  items:array:object:productId:objectid:Product:quantity:number:price:number \
+  # Instead of: items:array:string
 ```
 
-### Nested Data Structure
+## 🚀 Performance Features
 
+### Optimized Queries
+- 📊 Lean queries for list operations
+- 🔍 Indexed search fields
+- 📈 Aggregation pipeline support
+- 🔄 Efficient population of references
+
+### Caching Ready
+- 🏪 Service layer designed for caching integration
+- 🔑 Consistent data access patterns
+- ⚡ Optimized for Redis integration
+
+## 🛡️ Security Features
+
+### Input Validation
+- ✅ Zod schema validation
+- 🛡️ XSS protection ready
+- 📝 Sanitized inputs
+- 🔒 Type-safe operations
+
+### File Upload Security
+- 📁 Proper file type validation
+- 🗑️ Automatic cleanup on errors
+- 📊 Size limit enforcement ready
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+### Development Setup
 ```bash
-siuuu-create Form fields:array:object:label:string:type:string:required:boolean
+git clone <repository>
+cd leo-generator
+npm install
+npm run build
 ```
 
-## Contributing
-
-Contributions are welcome! Please read our contributing guidelines for details.
-
-## License
+## 📄 License
 
 MIT
+
+---
+
+**Leo Generate** - Because generating quality code should be as smooth as Leo's dribbling! ⚽
