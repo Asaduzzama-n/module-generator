@@ -12,7 +12,9 @@ A powerful and comprehensive module generator for Express.js applications with M
 - 🛠️ Enhanced service layer with error handling
 - 🛣️ RESTful routes with validation middleware
 - ✅ Zod validation with nested object support
+- ✅ Zod validation with nested object support
 - 🎨 Clean and consistent code structure
+- 🚮 Optional file cleanup on delete (with `--file:true`)
 
 ### Advanced Field Support
 - 🔣 Enum fields with predefined values
@@ -28,6 +30,8 @@ A powerful and comprehensive module generator for Express.js applications with M
 - 🔄 **Intelligent Documentation Updates** - Analyzes your code changes and updates docs accordingly
 - 🧠 **Code-Aware Parsing** - Reads both interface and model files for accurate field extraction
 - 📂 **Organized Output** - Separate folders for different documentation types
+- 📂 **Organized Output** - Separate folders for different documentation types
+- ⚡ **Dynamic Values** - Pre-request scripts auto-generate random values for testing
 - ✅ **100% Syntax Support** - Handles ALL field types the generator can create
 
 ## 📦 Installation
@@ -104,7 +108,9 @@ leo-generate generate <ModuleName> [fields...]
 --postman-dir <path>  # Custom Postman output directory
 --swagger-file <path> # Custom Swagger file path
 --modules-dir <path>  # Custom modules directory
+--modules-dir <path>  # Custom modules directory
 --routes-file <path>  # Custom routes file
+--file:true           # Enable file upload support (generates cleanup helpers)
 ```
 
 ### Smart Documentation Updates

@@ -3,20 +3,21 @@ import { FieldDefinition } from "../types";
 export const generateServiceContent = (
   camelCaseName: string,
   folderName: string,
-  fields: FieldDefinition[]
+  fields: FieldDefinition[],
+  hasFile: boolean = false
 ): string => {
-  // Check if there are any file/image fields
-  const hasImageField = fields.some(
+  // Check if there are any file/image fields or if hasFile flag is true
+  const hasImageField = hasFile || fields.some(
     (field) => field.name === "image" || field.name === "images" || field.name === "media" || field.type.toLowerCase() === "image"
   );
 
   // Check for reference fields for population
   const referenceFields = fields.filter(
-    (field) => field.type.toLowerCase() === "objectid" || 
-    (field.type.toLowerCase() === "array" && field.arrayItemType?.toLowerCase() === "objectid")
+    (field) => field.type.toLowerCase() === "objectid" ||
+      (field.type.toLowerCase() === "array" && field.arrayItemType?.toLowerCase() === "objectid")
   );
 
-  const populateString = referenceFields.length > 0 
+  const populateString = referenceFields.length > 0
     ? `.populate('${referenceFields.map(f => f.name).join("').populate('")}')`
     : "";
 
@@ -39,11 +40,10 @@ import { IPaginationOptions } from '../../../interfaces/pagination';
 import { paginationHelper } from '../../../helpers/paginationHelper';
 import { ${folderName}SearchableFields } from './${folderName}.constants';
 import { Types } from 'mongoose';
-${
-  hasImageField
-    ? `import { removeUploadedFiles } from '../../../utils/deleteUploadedFile';`
-    : ""
-}
+${hasImageField
+      ? `import { removeUploadedFiles } from '../../../helpers/fileHelper';`
+      : ""
+    }
 
 const create${camelCaseName} = async (
   user: JwtPayload,
@@ -177,6 +177,13 @@ const delete${camelCaseName} = async (id: string): Promise<I${camelCaseName}> =>
       'Something went wrong while deleting ${folderName}, please try again with valid id.'
     );
   }
+
+  ${hasImageField
+      ? `// Remove associated files
+  if (result.image || result.images || result.media) {
+    removeUploadedFiles(result.image || result.images || result.media);
+  }`
+      : ""}
 
   return result;
 };

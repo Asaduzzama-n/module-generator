@@ -2,6 +2,18 @@
 
 All notable changes to Leo Generate will be documented in this file.
 
+## [1.4.0] - 2025-12-18
+
+### 🚀 Major Enhancements
+- **Enhanced Enum Support**: Now uses TypeScript Enums (`export enum StatusEnum {...}`) instead of string unions, with proper validation using `z.nativeEnum` and Mongoose `Object.values`.
+- **File Removal Support**: Added `--file:true` flag. When used, automatically:
+  - Generates a `fileHelper` utility for removing uploaded files.
+  - Adds cleanup logic to the delete service to remove associated files (images/media) when a record is deleted.
+- **Smart Postman Scripts**: Pre-request scripts now auto-generate dynamic values for request bodies (e.g., timestamps, random numbers, random enum values), making testing easier.
+- **Nested Schema Fixes**: Improved nested schema generation order to ensure dependencies are defined before use.
+
+---
+
 ## [1.3.1] - 2025-08-07
 
 ### 🔧 Bug Fixes

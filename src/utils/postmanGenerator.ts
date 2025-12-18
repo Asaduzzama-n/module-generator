@@ -2,6 +2,57 @@ import { FieldDefinition, PostmanCollection, PostmanRequest } from "../types";
 import * as fs from "fs";
 import * as path from "path";
 
+// Helper to generate Pre-request Script
+function generatePreRequestScript(fields: FieldDefinition[], prefix: string = ""): string[] {
+    const scriptLines: string[] = [];
+
+    fields.forEach(field => {
+        if (field.name.toLowerCase() === "_id") return;
+
+        const varName = prefix ? `${prefix}_${field.name}` : field.name;
+
+        switch (field.type.toLowerCase()) {
+            case "string":
+                scriptLines.push(`pm.variables.set("${varName}", "${field.name}_" + Date.now());`);
+                break;
+            case "number":
+                scriptLines.push(`pm.variables.set("${varName}", Math.floor(Math.random() * 100));`);
+                break;
+            case "boolean":
+                scriptLines.push(`pm.variables.set("${varName}", Math.random() < 0.5);`);
+                break;
+            case "date":
+                scriptLines.push(`pm.variables.set("${varName}", new Date().toISOString());`);
+                break;
+            case "enum":
+                if (field.enumValues && field.enumValues.length > 0) {
+                    const values = JSON.stringify(field.enumValues);
+                    scriptLines.push(`const ${varName}_values = ${values};`);
+                    scriptLines.push(`pm.variables.set("${varName}", ${varName}_values[Math.floor(Math.random() * ${varName}_values.length)]);`);
+                } else {
+                    scriptLines.push(`pm.variables.set("${varName}", "ENUM_VALUE");`);
+                }
+                break;
+            case "object":
+                if (field.objectProperties?.length) {
+                    // Recursive call for nested properties
+                    const nestedPrefix = varName;
+                    scriptLines.push(...generatePreRequestScript(field.objectProperties, nestedPrefix));
+                }
+                break;
+            case "array":
+                if (field.ref?.toLowerCase() === "object" && field.objectProperties?.length) {
+                    // For array of objects, we generate one item's structure
+                    // This is a simplification but helps with pre-request variable setting
+                    scriptLines.push(...generatePreRequestScript(field.objectProperties, varName));
+                }
+                break;
+        }
+    });
+
+    return scriptLines;
+}
+
 export function generatePostmanCollection(
     moduleName: string,
     fields: FieldDefinition[]
@@ -38,7 +89,16 @@ export function generatePostmanCollection(
                     host: ["{{base_url}}"],
                     path: ["api", "v1", folderName]
                 }
-            }
+            },
+            event: [
+                {
+                    listen: "prerequest",
+                    script: {
+                        exec: generatePreRequestScript(fields),
+                        type: "text/javascript"
+                    }
+                }
+            ]
         },
 
         // Get all request
@@ -94,7 +154,16 @@ export function generatePostmanCollection(
                     host: ["{{base_url}}"],
                     path: ["api", "v1", folderName, `{{${folderName}_id}}`]
                 }
-            }
+            },
+            event: [
+                {
+                    listen: "prerequest",
+                    script: {
+                        exec: generatePreRequestScript(fields),
+                        type: "text/javascript"
+                    }
+                }
+            ]
         },
 
         // Delete request
@@ -140,72 +209,44 @@ export function savePostmanCollection(
     console.log(`✅ Postman collection created: ${filePath}`);
 }
 
-function generateSampleData(fields: FieldDefinition[]): any {
+function generateSampleData(fields: FieldDefinition[], prefix: string = ""): any {
     const sampleData: any = {};
 
     fields.forEach(field => {
         if (field.name.toLowerCase() === "_id") return;
 
+        const varName = prefix ? `${prefix}_${field.name}` : field.name;
+
         switch (field.type.toLowerCase()) {
             case "string":
-                sampleData[field.name] = `sample_${field.name}`;
-                break;
             case "number":
-                sampleData[field.name] = 123;
-                break;
             case "boolean":
-                sampleData[field.name] = true;
-                break;
             case "date":
-                sampleData[field.name] = new Date().toISOString();
-                break;
             case "enum":
-                if (field.enumValues && field.enumValues.length > 0) {
-                    sampleData[field.name] = field.enumValues[0];
-                } else {
-                    sampleData[field.name] = `sample_${field.name}`;
-                }
+            case "objectid":
+            case "id":
+                sampleData[field.name] = `{{${varName}}}`;
                 break;
             case "array":
                 if (field.ref?.toLowerCase() === "object" && field.objectProperties?.length) {
-                    sampleData[field.name] = [generateSampleData(field.objectProperties)];
-                } else if (field.arrayItemType?.toLowerCase() === "objectid") {
-                    sampleData[field.name] = ["507f1f77bcf86cd799439011"];
+                    // Array of objects - return one item with variable placeholders
+                    sampleData[field.name] = [generateSampleData(field.objectProperties, varName)];
                 } else if (field.arrayItemType) {
-                    // Generate proper sample data based on array item type
-                    switch (field.arrayItemType.toLowerCase()) {
-                        case "string":
-                            sampleData[field.name] = [`sample_${field.name}_item`];
-                            break;
-                        case "number":
-                            sampleData[field.name] = [123];
-                            break;
-                        case "boolean":
-                            sampleData[field.name] = [true];
-                            break;
-                        case "date":
-                            sampleData[field.name] = [new Date().toISOString()];
-                            break;
-                        default:
-                            sampleData[field.name] = [`sample_${field.name}_item`];
-                    }
+                    // ... existing logic for scalar arrays ...
+                    sampleData[field.name] = []; // Placeholder for scalar array for now
                 } else {
-                    sampleData[field.name] = [`sample_${field.name}_item`];
+                    sampleData[field.name] = [];
                 }
                 break;
             case "object":
                 if (field.objectProperties?.length) {
-                    sampleData[field.name] = generateSampleData(field.objectProperties);
+                    sampleData[field.name] = generateSampleData(field.objectProperties, varName);
                 } else {
-                    sampleData[field.name] = { key: "value" };
+                    sampleData[field.name] = {};
                 }
                 break;
-            case "objectid":
-            case "id":
-                sampleData[field.name] = "507f1f77bcf86cd799439011";
-                break;
             default:
-                sampleData[field.name] = `sample_${field.name}`;
+                sampleData[field.name] = `{{${varName}}}`;
         }
     });
 

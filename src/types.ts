@@ -30,6 +30,13 @@ export interface PostmanRequest {
       query?: any[];
     };
   };
+  event?: {
+    listen: string;
+    script: {
+      exec: string[];
+      type: string;
+    };
+  }[];
 }
 
 export interface PostmanCollection {

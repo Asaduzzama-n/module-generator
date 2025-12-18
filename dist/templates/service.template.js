@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateServiceContent = void 0;
-const generateServiceContent = (camelCaseName, folderName, fields) => {
-    // Check if there are any file/image fields
-    const hasImageField = fields.some((field) => field.name === "image" || field.name === "images" || field.name === "media" || field.type.toLowerCase() === "image");
+const generateServiceContent = (camelCaseName, folderName, fields, hasFile = false) => {
+    // Check if there are any file/image fields or if hasFile flag is true
+    const hasImageField = hasFile || fields.some((field) => field.name === "image" || field.name === "images" || field.name === "media" || field.type.toLowerCase() === "image");
     // Check for reference fields for population
     const referenceFields = fields.filter((field) => {
         var _a;
@@ -27,7 +27,7 @@ import { paginationHelper } from '../../../helpers/paginationHelper';
 import { ${folderName}SearchableFields } from './${folderName}.constants';
 import { Types } from 'mongoose';
 ${hasImageField
-        ? `import { removeUploadedFiles } from '../../../utils/deleteUploadedFile';`
+        ? `import { removeUploadedFiles } from '../../../helpers/fileHelper';`
         : ""}
 
 const create${camelCaseName} = async (
@@ -162,6 +162,13 @@ const delete${camelCaseName} = async (id: string): Promise<I${camelCaseName}> =>
       'Something went wrong while deleting ${folderName}, please try again with valid id.'
     );
   }
+
+  ${hasImageField
+        ? `// Remove associated files
+  if (result.image || result.images || result.media) {
+    removeUploadedFiles(result.image || result.images || result.media);
+  }`
+        : ""}
 
   return result;
 };

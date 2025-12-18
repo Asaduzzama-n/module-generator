@@ -41,6 +41,7 @@ const path = __importStar(require("path"));
 const fieldParser_1 = require("./utils/fieldParser");
 const interfaceGenerator_1 = require("./utils/interfaceGenerator");
 const documentationUpdater_1 = require("./utils/documentationUpdater");
+const helperGenerator_1 = require("./utils/helperGenerator");
 // Import template generators
 const route_template_1 = require("./templates/route.template");
 const constants_template_1 = require("./templates/constants.template");
@@ -76,7 +77,15 @@ function toCamelCase(str) {
 }
 // Enhanced model generation with better nested schema support
 function generateModelContent(camelCaseName, folderName, fields) {
-    let modelContent = `import { Schema, model } from 'mongoose';\nimport { I${camelCaseName}, ${camelCaseName}Model } from './${folderName}.interface'; \n\n`;
+    // Collect enum imports
+    const enumImports = fields
+        .filter(f => { var _a; return f.type === 'enum' && ((_a = f.enumValues) === null || _a === void 0 ? void 0 : _a.length); })
+        .map(f => `${toCamelCase(f.name)}Enum`);
+    let modelContent = `import { Schema, model } from 'mongoose';\nimport { I${camelCaseName}, ${camelCaseName}Model`;
+    if (enumImports.length > 0) {
+        modelContent += `, ${enumImports.join(', ')}`;
+    }
+    modelContent += ` } from './${folderName}.interface'; \n\n`;
     // Generate nested schemas
     const nestedSchemas = generateNestedSchemas(fields);
     modelContent += nestedSchemas;
@@ -107,6 +116,9 @@ function generateNestedSchemas(fields) {
         if (field.type.toLowerCase() === "array" &&
             ((_a = field.ref) === null || _a === void 0 ? void 0 : _a.toLowerCase()) === "object" &&
             ((_b = field.objectProperties) === null || _b === void 0 ? void 0 : _b.length)) {
+            // Check for nested objects within this schema - GENERATE CHILDREN FIRST
+            const nestedSchemas = generateNestedSchemas(field.objectProperties);
+            schemas += nestedSchemas;
             const nestedSchemaName = `${field.name}ItemSchema`;
             schemas += `const ${nestedSchemaName} = new Schema({\n`;
             // Add properties
@@ -120,9 +132,6 @@ function generateNestedSchemas(fields) {
                 schemas += `  ${prop.name}: ${schemaType}${additionalProps},\n`;
             });
             schemas += `}, { _id: false });\n\n`;
-            // Check for nested objects within this schema
-            const nestedSchemas = generateNestedSchemas(field.objectProperties);
-            schemas += nestedSchemas;
         }
     });
     return schemas;
@@ -141,7 +150,8 @@ function mapToMongooseType(field) {
             return "{ type: Date }";
         case "enum":
             if (field.enumValues && field.enumValues.length > 0) {
-                return `{ type: String, enum: ['${field.enumValues.join("', '")}'] }`;
+                const enumName = `${toCamelCase(field.name)}Enum`;
+                return `{ type: String, enum: Object.values(${enumName}) }`;
             }
             return "{ type: String }";
         case "array":
@@ -195,7 +205,16 @@ function mapToMongooseType(field) {
 }
 // Enhanced validation generation
 function generateValidationContent(camelCaseName, fields) {
-    let validationContent = `import { z } from 'zod';\n\n`;
+    const folderName = camelCaseName.toLowerCase();
+    let validationContent = `import { z } from 'zod';\n`;
+    // Collect enum imports
+    const enumImports = fields
+        .filter(f => { var _a; return f.type === 'enum' && ((_a = f.enumValues) === null || _a === void 0 ? void 0 : _a.length); })
+        .map(f => `${toCamelCase(f.name)}Enum`);
+    if (enumImports.length > 0) {
+        validationContent += `import { ${enumImports.join(', ')} } from './${folderName}.interface';\n`;
+    }
+    validationContent += `\n`;
     // Add nested schemas for array of objects
     fields.forEach((field) => {
         var _a, _b;
@@ -270,7 +289,8 @@ function mapToZodType(type, field) {
             return "z.string().datetime()";
         case "enum":
             if ((field === null || field === void 0 ? void 0 : field.enumValues) && field.enumValues.length > 0) {
-                return `z.enum(['${field.enumValues.join("', '")}'])`;
+                const enumName = `${toCamelCase(field.name)}Enum`;
+                return `z.nativeEnum(${enumName})`;
             }
             return "z.string()";
         case "array":
@@ -300,10 +320,15 @@ function mapToZodType(type, field) {
 }
 // Route generation is now handled by the imported template
 // Enhanced createModule function with documentation generation
-function createModule(name, fields, skipFiles, config, docOptions = {}) {
+function createModule(name, fields, skipFiles, config, docOptions = {}, hasFile = false) {
     const camelCaseName = toCamelCase(name);
     const folderName = camelCaseName.toLowerCase();
     const folderPath = path.join(process.cwd(), config.modulesDir, folderName);
+    // Check if file removal helper is needed
+    if (hasFile) {
+        // Generate the helper file in src/helpers
+        (0, helperGenerator_1.generateFileHelper)();
+    }
     // Check if the folder already exists
     if (!fs.existsSync(folderPath)) {
         fs.mkdirSync(folderPath, { recursive: true });
@@ -318,7 +343,7 @@ function createModule(name, fields, skipFiles, config, docOptions = {}) {
         interface: (0, interfaceGenerator_1.generateInterfaceContent)(camelCaseName, fields),
         model: generateModelContent(camelCaseName, folderName, fields),
         controller: (0, controller_template_1.generateControllerContent)(camelCaseName, folderName, fields),
-        service: (0, service_template_1.generateServiceContent)(camelCaseName, folderName, fields),
+        service: (0, service_template_1.generateServiceContent)(camelCaseName, folderName, fields, hasFile),
         route: (0, route_template_1.generateRouteContent)(camelCaseName, folderName, fields),
         validation: generateValidationContent(camelCaseName, fields),
         constants: (0, constants_template_1.generateConstantsContent)(camelCaseName, folderName, fields),
@@ -421,7 +446,7 @@ function main() {
         program
             .name("leo-generate")
             .description("Enhanced Express module generator with Mongoose models")
-            .version("1.3.1");
+            .version("1.4.1");
         // Main module generation command
         program
             .command("generate")
@@ -446,7 +471,7 @@ function main() {
             // Get field definitions from remaining arguments
             const fieldArgs = program.args.slice(2); // Skip 'generate' and module name
             console.log("Processing field arguments:", fieldArgs);
-            const { fields, skipFiles } = (0, fieldParser_1.parseFieldDefinitions)(fieldArgs);
+            const { fields, skipFiles, hasFile } = (0, fieldParser_1.parseFieldDefinitions)(fieldArgs);
             if (fields.length === 0) {
                 console.log("⚠️  No fields were parsed. Check your command syntax.");
                 console.log("Example: leo-generate generate User name:string email:string age:number");
@@ -457,7 +482,7 @@ function main() {
                 updateSwagger: options.swagger !== false,
                 postmanDir: options.postmanDir,
                 swaggerFile: options.swaggerFile
-            });
+            }, hasFile);
         });
         // Documentation update command
         program
@@ -486,7 +511,7 @@ function main() {
                 // Legacy mode - treat first argument as module name
                 const fieldArgs = program.args.slice(1);
                 console.log("Legacy mode - Processing field arguments:", fieldArgs);
-                const { fields, skipFiles } = (0, fieldParser_1.parseFieldDefinitions)(fieldArgs);
+                const { fields, skipFiles, hasFile } = (0, fieldParser_1.parseFieldDefinitions)(fieldArgs);
                 if (fields.length === 0) {
                     console.log("⚠️  No fields were parsed. Check your command syntax.");
                     console.log("Example: leo-generate User name:string email:string age:number");
@@ -497,7 +522,7 @@ function main() {
                     updateSwagger: true,
                     postmanDir: "postman",
                     swaggerFile: "swagger.json"
-                });
+                }, hasFile);
             }
         });
         program.parse();

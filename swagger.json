@@ -1524,6 +1524,657 @@
           }
         }
       }
+    },
+    "/testmodule": {
+      "post": {
+        "tags": [
+          "Testmodule"
+        ],
+        "summary": "Create a new Testmodule",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestmoduleCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Testmodule created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testmodule"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Testmodule"
+        ],
+        "summary": "Get all Testmodules",
+        "responses": {
+          "200": {
+            "description": "List of Testmodules retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Testmodule"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/testmodule/{id}": {
+      "get": {
+        "tags": [
+          "Testmodule"
+        ],
+        "summary": "Get Testmodule by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Testmodule ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Testmodule retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testmodule"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Testmodule not found"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Testmodule"
+        ],
+        "summary": "Update Testmodule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Testmodule ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestmoduleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Testmodule updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testmodule"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Testmodule not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Testmodule"
+        ],
+        "summary": "Delete Testmodule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Testmodule ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Testmodule deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testmodule"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Testmodule not found"
+          }
+        }
+      }
+    },
+    "/hello": {
+      "post": {
+        "tags": [
+          "Hello"
+        ],
+        "summary": "Create a new Hello",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HelloCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Hello created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Hello"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Hello"
+        ],
+        "summary": "Get all Hellos",
+        "responses": {
+          "200": {
+            "description": "List of Hellos retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Hello"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hello/{id}": {
+      "get": {
+        "tags": [
+          "Hello"
+        ],
+        "summary": "Get Hello by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Hello ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hello retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Hello"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Hello not found"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Hello"
+        ],
+        "summary": "Update Hello",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Hello ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HelloUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Hello updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Hello"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Hello not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Hello"
+        ],
+        "summary": "Delete Hello",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Hello ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hello deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Hello"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Hello not found"
+          }
+        }
+      }
+    },
+    "/testfile": {
+      "post": {
+        "tags": [
+          "Testfile"
+        ],
+        "summary": "Create a new Testfile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestfileCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Testfile created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testfile"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Testfile"
+        ],
+        "summary": "Get all Testfiles",
+        "responses": {
+          "200": {
+            "description": "List of Testfiles retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Testfile"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/testfile/{id}": {
+      "get": {
+        "tags": [
+          "Testfile"
+        ],
+        "summary": "Get Testfile by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Testfile ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Testfile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testfile"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Testfile not found"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Testfile"
+        ],
+        "summary": "Update Testfile",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Testfile ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestfileUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Testfile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testfile"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Testfile not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Testfile"
+        ],
+        "summary": "Delete Testfile",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Testfile ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Testfile deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testfile"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Testfile not found"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2830,6 +3481,243 @@
           "isActive": {
             "type": "boolean",
             "description": "isActive field"
+          }
+        }
+      },
+      "Testmodule": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "MongoDB ObjectId"
+          },
+          "title": {
+            "type": "string",
+            "description": "title field"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "description": "status field"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": [
+          "_id"
+        ]
+      },
+      "TestmoduleCreate": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "title field"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "description": "status field"
+          }
+        },
+        "required": []
+      },
+      "TestmoduleUpdate": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "title field"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "description": "status field"
+          }
+        }
+      },
+      "SkillItem": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "MongoDB ObjectId"
+          },
+          "title": {
+            "type": "string",
+            "description": "title field"
+          },
+          "description": {
+            "type": "string",
+            "description": "description field"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": [
+          "_id"
+        ]
+      },
+      "Hello": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "MongoDB ObjectId"
+          },
+          "name": {
+            "type": "string",
+            "description": "name field"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "ongoing",
+              "completed"
+            ],
+            "description": "status field"
+          },
+          "skill": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkillItem"
+            },
+            "description": "Array of skill objects"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": [
+          "_id"
+        ]
+      },
+      "HelloCreate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name field"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "ongoing",
+              "completed"
+            ],
+            "description": "status field"
+          },
+          "skill": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkillItem"
+            },
+            "description": "Array of skill objects"
+          }
+        },
+        "required": []
+      },
+      "HelloUpdate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name field"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "ongoing",
+              "completed"
+            ],
+            "description": "status field"
+          },
+          "skill": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkillItem"
+            },
+            "description": "Array of skill objects"
+          }
+        }
+      },
+      "Testfile": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "MongoDB ObjectId"
+          },
+          "name": {
+            "type": "string",
+            "description": "name field"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": [
+          "_id"
+        ]
+      },
+      "TestfileCreate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name field"
+          }
+        },
+        "required": []
+      },
+      "TestfileUpdate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name field"
           }
         }
       }

@@ -39,9 +39,13 @@ export function generateInterfaceContent(
       field.enumValues.length > 0
     ) {
       const enumName = `${toCamelCase(field.name)}Enum`;
-      interfaceContent += `export type ${enumName} = ${field.enumValues
-        .map((v) => `'${v}'`)
-        .join(" | ")};\n\n`;
+      interfaceContent += `export enum ${enumName} {\n`;
+      field.enumValues.forEach(value => {
+        // Handle special characters in enum keys if necessary, simplified for now
+        const key = value.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+        interfaceContent += `  ${key} = '${value}',\n`;
+      });
+      interfaceContent += `}\n\n`;
     }
   });
 
@@ -53,10 +57,10 @@ export function generateInterfaceContent(
   if (filterableFields.length > 0) {
     interfaceContent += `export interface I${camelCaseName}Filterables {\n`;
     interfaceContent += `  searchTerm?: string;\n`;
-    
+
     filterableFields.forEach((field) => {
       let tsType = mapToTypeScriptType(field);
-      
+
       // Use enum type if applicable
       if (
         field.type.toLowerCase() === "enum" &&
@@ -65,10 +69,10 @@ export function generateInterfaceContent(
       ) {
         tsType = `${toCamelCase(field.name)}Enum`;
       }
-      
+
       interfaceContent += `  ${field.name}?: ${tsType};\n`;
     });
-    
+
     interfaceContent += `}\n\n`;
   }
 
@@ -127,7 +131,7 @@ function mapToTypeScriptType(field: FieldDefinition): string {
       return "Date";
     case "enum":
       if (field.enumValues && field.enumValues.length > 0) {
-        return field.enumValues.map((v) => `'${v}'`).join(" | ");
+        return `${toCamelCase(field.name)}Enum`;
       }
       return "string";
     case "array":

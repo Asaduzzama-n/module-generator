@@ -3,16 +3,23 @@ import { FieldDefinition } from "../types";
 export function parseFieldDefinitions(args: string[]): {
   fields: FieldDefinition[];
   skipFiles: string[];
+  hasFile: boolean;
 } {
   const fields: FieldDefinition[] = [];
   const skipFiles: string[] = [];
   let skipMode = false;
+  let hasFile = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
 
     if (arg === "--skip") {
       skipMode = true;
+      continue;
+    }
+
+    if (arg === "--file:true" || arg === "file:true") {
+      hasFile = true;
       continue;
     }
 
@@ -56,7 +63,39 @@ export function parseFieldDefinitions(args: string[]): {
 
           if (parts.length >= 2) {
             let name = parts[0].trim();
-            const type = parts[1].trim().toLowerCase();
+            const typeRaw = parts[1].trim(); // Don't lowercase yet to preserve enum values if any
+            let type = typeRaw.toLowerCase();
+
+            // Check if type follows enum[a,b] pattern
+            const typeEnumMatch = typeRaw.match(/^enum\[([^\]]+)\]$/i);
+            if (typeEnumMatch) {
+              const enumValues = typeEnumMatch[1].split(",").map((v) => v.trim());
+
+              // Check for optional marker (?)
+              const isOptional = name.endsWith("?");
+              if (isOptional) {
+                name = name.slice(0, -1);
+              }
+
+              // Check for required marker (!)
+              const isRequired = name.endsWith("!");
+              if (isRequired) {
+                name = name.slice(0, -1);
+              }
+
+              fields.push({
+                name,
+                type: "enum",
+                enumValues,
+                isRequired,
+                isOptional,
+              });
+
+              console.log(
+                `Added enum field: ${name} with values [${enumValues.join(", ")}]`
+              );
+              continue;
+            }
 
             // Skip _id field as it's automatically handled by MongoDB
             if (name.toLowerCase() === "_id") {
@@ -138,8 +177,7 @@ export function parseFieldDefinitions(args: string[]): {
               });
 
               console.log(
-                `Added array field: ${name}:${type}:${arrayItemType}${
-                  ref ? `:${ref}` : ""
+                `Added array field: ${name}:${type}:${arrayItemType}${ref ? `:${ref}` : ""
                 }`
               );
             } else {
@@ -159,5 +197,6 @@ export function parseFieldDefinitions(args: string[]): {
   }
 
   console.log("Parsed fields:", JSON.stringify(fields, null, 2));
-  return { fields, skipFiles };
+  if (hasFile) console.log("📂 File upload support enabled");
+  return { fields, skipFiles, hasFile };
 }
