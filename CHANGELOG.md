@@ -2,6 +2,34 @@
 
 All notable changes to Leo Generate will be documented in this file.
 
+## [1.5.0] - 2025-12-20
+
+### 🚀 Major Feature: Automated Postman Cloud Sync
+
+#### Added
+- **Automated Postman Collection Import**: Automatically sync generated API collections to Postman Cloud
+  - Configure via `.env`, `package.json`, or CLI flags
+  - Supports `POSTMAN_API_KEY` and `POSTMAN_COLLECTION_ID`
+  - Seamlessly integrates with existing local file generation
+- **Smart Collection Merging**: Intelligently updates or adds module folders in existing collections
+- **Sequential Processing**: Prevents race conditions when updating multiple modules
+- **Variable Sanitization**: Automatically fixes invalid Postman variable types
+
+#### Enhanced
+- **update-docs Command**: Now supports automated Postman Cloud sync
+  - Properly detects TypeScript enum definitions and their values
+  - Correctly identifies changes to nested object properties
+  - Generates accurate Postman pre-request scripts with enum value arrays
+- **Enum Detection**: Enhanced field extraction to recognize TypeScript `enum` types
+- **Error Handling**: Graceful handling of API errors without breaking module generation
+
+#### Fixed
+- **Postman API Variable Type Error**: Fixed validation errors caused by invalid variable types
+- **Race Condition**: Fixed concurrent API update conflicts in `update-docs`
+- **Enum Value Detection**: Now properly extracts enum values from interface files
+
+---
+
 ## [1.4.0] - 2025-12-18
 
 ### 🚀 Major Enhancements

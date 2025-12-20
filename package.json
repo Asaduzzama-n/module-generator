@@ -1,7 +1,7 @@
 {
   "name": "@unknow69/leo-generator",
-  "version": "1.4.0",
-  "description": "Enhanced Express module generator with Mongoose models, Postman collections, and Swagger documentation",
+  "version": "1.5.0",
+  "description": "Enhanced Express module generator with Mongoose models, automated Postman Cloud sync, and Swagger documentation",
   "main": "dist/index.js",
   "bin": {
     "leo-generate": "dist/index.js"
@@ -16,7 +16,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/unknow69/leo-generator.git"
+    "url": "git+https://github.com/unknow69/leo-generator.git"
   },
   "homepage": "https://github.com/unknow69/leo-generator#readme",
   "bugs": {

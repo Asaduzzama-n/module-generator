@@ -2,7 +2,55 @@
 
 ## 🎯 **How It Works - No API Keys Required!**
 
-The Leo Generate tool creates **static documentation files** that users can import and use. No API keys or external services are needed for generation.
+The generator automatically creates Postman collections and Swagger documentation for your modules. You can also automate the import process to Postman Cloud.
+
+## Table of Contents
+1. [Automatic Postman Sync (New)](#automatic-postman-sync-new)
+2. [Postman Collections (Local)](#postman-collections-local)
+3. [Swagger Documentation](#swagger-documentation)
+4. [Updating Existing Modules](#updating-existing-modules)
+
+## Automatic Postman Sync (New)
+
+You can now automatically sync your module's API to an existing Postman collection in the cloud.
+
+### 1. Setup
+
+You need two pieces of information from Postman:
+- **Postman API Key**: Generate one in your [Postman Account Settings](https://web.postman.co/settings/me/api-keys).
+- **Collection ID**: Open your collection in Postman, click the "Info" icon (ⓘ) and copy the `ID`.
+
+### 2. Configuration
+
+You can provide these credentials in three ways:
+
+#### A. Environment Variables (.env)
+Create a `.env` file in your project root:
+```env
+POSTMAN_API_KEY=your_api_key_here
+POSTMAN_COLLECTION_ID=your_collection_id_here
+```
+
+#### B. Package.json
+Add them to your `moduleGenerator` config:
+```json
+"moduleGenerator": {
+  "postmanApiKey": "your_api_key_here",
+  "postmanCollectionId": "your_collection_id_here"
+}
+```
+
+#### C. CLI Arguments
+```bash
+npx @unknow69/leo-generator generate User name:string --postman-api-key KEY --postman-collection-id ID
+```
+
+### 3. How it Works
+When you generate a new module, the generator will:
+1. Create the local Postman file as usual.
+2. Connect to Postman API.
+3. Fetch your collection.
+4. Add or update a folder named `[ModuleName] API` within that collection.
 
 ## 📮 **Postman Collections**
 

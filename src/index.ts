@@ -22,6 +22,8 @@ import { generateServiceContent } from "./templates/service.template";
 interface ModuleGeneratorConfig {
   modulesDir: string;
   routesFile: string;
+  postmanApiKey?: string;
+  postmanCollectionId?: string;
 }
 
 // Documentation options interface
@@ -30,6 +32,8 @@ interface DocumentationOptions {
   updateSwagger?: boolean;
   postmanDir?: string;
   swaggerFile?: string;
+  postmanApiKey?: string;
+  postmanCollectionId?: string;
 }
 
 // Templates type
@@ -51,22 +55,45 @@ const defaultConfig: ModuleGeneratorConfig = {
 
 // Load configuration from package.json or use defaults
 function loadConfig(): ModuleGeneratorConfig {
+  const config: ModuleGeneratorConfig = { ...defaultConfig };
+
+  // 1. Try to load from .env file in the current directory
+  try {
+    const envPath = path.join(process.cwd(), ".env");
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, "utf-8");
+      const lines = envContent.split("\n");
+      lines.forEach(line => {
+        const [key, ...valueParts] = line.split("=");
+        if (key && valueParts.length > 0) {
+          const value = valueParts.join("=").trim().replace(/^['"]|['"]$/g, "");
+          if (key.trim() === "POSTMAN_API_KEY") config.postmanApiKey = value;
+          if (key.trim() === "POSTMAN_COLLECTION_ID") config.postmanCollectionId = value;
+        }
+      });
+    }
+  } catch (error) {
+    // Ignore env loading errors
+  }
+
+  // 2. Try to load from package.json
   try {
     const packageJsonPath = path.join(process.cwd(), "package.json");
     if (fs.existsSync(packageJsonPath)) {
       const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
-      const config = packageJson.moduleGenerator || {};
-      return {
-        modulesDir: config.modulesDir || defaultConfig.modulesDir,
-        routesFile: config.routesFile || defaultConfig.routesFile,
-      };
+      const userConfig = packageJson.moduleGenerator || {};
+
+      if (userConfig.modulesDir) config.modulesDir = userConfig.modulesDir;
+      if (userConfig.routesFile) config.routesFile = userConfig.routesFile;
+      if (userConfig.postmanApiKey) config.postmanApiKey = userConfig.postmanApiKey;
+      if (userConfig.postmanCollectionId) config.postmanCollectionId = userConfig.postmanCollectionId;
     }
   } catch (error) {
     console.warn(
       "Could not load configuration from package.json, using defaults"
     );
   }
-  return defaultConfig;
+  return config;
 }
 
 function toCamelCase(str: string): string {
@@ -543,6 +570,8 @@ function main() {
       .option("--no-swagger", "Skip Swagger documentation generation")
       .option("--postman-dir <path>", "Custom Postman output directory", "postman")
       .option("--swagger-file <path>", "Custom Swagger file path", "swagger.json")
+      .option("--postman-api-key <string>", "Postman API Key")
+      .option("--postman-collection-id <string>", "Postman Collection ID")
       .allowUnknownOption(true)
       .action((name: string, options: any) => {
         // Override config with CLI options
@@ -551,6 +580,12 @@ function main() {
         }
         if (options.routesFile) {
           config.routesFile = options.routesFile;
+        }
+        if (options.postmanApiKey) {
+          config.postmanApiKey = options.postmanApiKey;
+        }
+        if (options.postmanCollectionId) {
+          config.postmanCollectionId = options.postmanCollectionId;
         }
 
         // Get field definitions from remaining arguments
@@ -569,7 +604,9 @@ function main() {
           updatePostman: options.postman !== false,
           updateSwagger: options.swagger !== false,
           postmanDir: options.postmanDir,
-          swaggerFile: options.swaggerFile
+          swaggerFile: options.swaggerFile,
+          postmanApiKey: config.postmanApiKey,
+          postmanCollectionId: config.postmanCollectionId
         }, hasFile);
       });
 
@@ -583,12 +620,14 @@ function main() {
       .option("--no-swagger", "Skip Swagger documentation generation")
       .option("--postman-dir <path>", "Custom Postman output directory", "postman")
       .option("--swagger-file <path>", "Custom Swagger file path", "swagger.json")
-      .action((options: any) => {
-        updateExistingModulesDocumentation(options.modulesDir, {
+      .action(async (options: any) => {
+        await updateExistingModulesDocumentation(options.modulesDir, {
           updatePostman: options.postman !== false,
           updateSwagger: options.swagger !== false,
           postmanDir: options.postmanDir,
-          swaggerFile: options.swaggerFile
+          swaggerFile: options.swaggerFile,
+          postmanApiKey: config.postmanApiKey,
+          postmanCollectionId: config.postmanCollectionId
         });
       });
 
@@ -614,7 +653,9 @@ function main() {
             updatePostman: true,
             updateSwagger: true,
             postmanDir: "postman",
-            swaggerFile: "swagger.json"
+            swaggerFile: "swagger.json",
+            postmanApiKey: config.postmanApiKey,
+            postmanCollectionId: config.postmanCollectionId
           }, hasFile);
         }
       });

@@ -33,6 +33,15 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const commander_1 = require("commander");
 const fs = __importStar(require("fs"));
@@ -54,21 +63,48 @@ const defaultConfig = {
 };
 // Load configuration from package.json or use defaults
 function loadConfig() {
+    const config = Object.assign({}, defaultConfig);
+    // 1. Try to load from .env file in the current directory
+    try {
+        const envPath = path.join(process.cwd(), ".env");
+        if (fs.existsSync(envPath)) {
+            const envContent = fs.readFileSync(envPath, "utf-8");
+            const lines = envContent.split("\n");
+            lines.forEach(line => {
+                const [key, ...valueParts] = line.split("=");
+                if (key && valueParts.length > 0) {
+                    const value = valueParts.join("=").trim().replace(/^['"]|['"]$/g, "");
+                    if (key.trim() === "POSTMAN_API_KEY")
+                        config.postmanApiKey = value;
+                    if (key.trim() === "POSTMAN_COLLECTION_ID")
+                        config.postmanCollectionId = value;
+                }
+            });
+        }
+    }
+    catch (error) {
+        // Ignore env loading errors
+    }
+    // 2. Try to load from package.json
     try {
         const packageJsonPath = path.join(process.cwd(), "package.json");
         if (fs.existsSync(packageJsonPath)) {
             const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
-            const config = packageJson.moduleGenerator || {};
-            return {
-                modulesDir: config.modulesDir || defaultConfig.modulesDir,
-                routesFile: config.routesFile || defaultConfig.routesFile,
-            };
+            const userConfig = packageJson.moduleGenerator || {};
+            if (userConfig.modulesDir)
+                config.modulesDir = userConfig.modulesDir;
+            if (userConfig.routesFile)
+                config.routesFile = userConfig.routesFile;
+            if (userConfig.postmanApiKey)
+                config.postmanApiKey = userConfig.postmanApiKey;
+            if (userConfig.postmanCollectionId)
+                config.postmanCollectionId = userConfig.postmanCollectionId;
         }
     }
     catch (error) {
         console.warn("Could not load configuration from package.json, using defaults");
     }
-    return defaultConfig;
+    return config;
 }
 function toCamelCase(str) {
     return str
@@ -459,6 +495,8 @@ function main() {
             .option("--no-swagger", "Skip Swagger documentation generation")
             .option("--postman-dir <path>", "Custom Postman output directory", "postman")
             .option("--swagger-file <path>", "Custom Swagger file path", "swagger.json")
+            .option("--postman-api-key <string>", "Postman API Key")
+            .option("--postman-collection-id <string>", "Postman Collection ID")
             .allowUnknownOption(true)
             .action((name, options) => {
             // Override config with CLI options
@@ -467,6 +505,12 @@ function main() {
             }
             if (options.routesFile) {
                 config.routesFile = options.routesFile;
+            }
+            if (options.postmanApiKey) {
+                config.postmanApiKey = options.postmanApiKey;
+            }
+            if (options.postmanCollectionId) {
+                config.postmanCollectionId = options.postmanCollectionId;
             }
             // Get field definitions from remaining arguments
             const fieldArgs = program.args.slice(2); // Skip 'generate' and module name
@@ -481,7 +525,9 @@ function main() {
                 updatePostman: options.postman !== false,
                 updateSwagger: options.swagger !== false,
                 postmanDir: options.postmanDir,
-                swaggerFile: options.swaggerFile
+                swaggerFile: options.swaggerFile,
+                postmanApiKey: config.postmanApiKey,
+                postmanCollectionId: config.postmanCollectionId
             }, hasFile);
         });
         // Documentation update command
@@ -494,14 +540,16 @@ function main() {
             .option("--no-swagger", "Skip Swagger documentation generation")
             .option("--postman-dir <path>", "Custom Postman output directory", "postman")
             .option("--swagger-file <path>", "Custom Swagger file path", "swagger.json")
-            .action((options) => {
-            (0, documentationUpdater_1.updateExistingModulesDocumentation)(options.modulesDir, {
+            .action((options) => __awaiter(this, void 0, void 0, function* () {
+            yield (0, documentationUpdater_1.updateExistingModulesDocumentation)(options.modulesDir, {
                 updatePostman: options.postman !== false,
                 updateSwagger: options.swagger !== false,
                 postmanDir: options.postmanDir,
-                swaggerFile: options.swaggerFile
+                swaggerFile: options.swaggerFile,
+                postmanApiKey: config.postmanApiKey,
+                postmanCollectionId: config.postmanCollectionId
             });
-        });
+        }));
         // Legacy support - direct module generation (backward compatibility)
         program
             .argument("[name]", "Module name (legacy support)")
@@ -521,7 +569,9 @@ function main() {
                     updatePostman: true,
                     updateSwagger: true,
                     postmanDir: "postman",
-                    swaggerFile: "swagger.json"
+                    swaggerFile: "swagger.json",
+                    postmanApiKey: config.postmanApiKey,
+                    postmanCollectionId: config.postmanCollectionId
                 }, hasFile);
             }
         });

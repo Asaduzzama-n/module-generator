@@ -26,6 +26,7 @@ A powerful and comprehensive module generator for Express.js applications with M
 
 ### Smart Documentation Generation
 - 📮 **Automatic Postman Collections** - Generate complete API collections
+- ☁️ **Automated Postman Sync** - Automatically sync APIs to Postman Cloud collections
 - 📖 **Swagger Documentation** - Auto-generate OpenAPI 3.0 specs
 - 🔄 **Intelligent Documentation Updates** - Analyzes your code changes and updates docs accordingly
 - 🧠 **Code-Aware Parsing** - Reads both interface and model files for accurate field extraction
