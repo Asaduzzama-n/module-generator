@@ -56,12 +56,12 @@ function generateNestedSchemas(fields: FieldDefinition[]): string {
   let nestedSchemas = "";
 
   fields.forEach((field) => {
-    if (
-      field.type.toLowerCase() === "array" &&
-      field.ref?.toLowerCase() === "object" &&
-      field.objectProperties?.length
-    ) {
-      const nestedSchemaName = `${field.name}ItemSchema`;
+    const isArrayObject = field.type.toLowerCase() === "array" && field.ref?.toLowerCase() === "object";
+    const isObjectWithProps = field.type.toLowerCase() === "object" && field.objectProperties?.length;
+
+    if ((isArrayObject || isObjectWithProps) && field.objectProperties?.length) {
+      const isArray = field.type.toLowerCase() === "array";
+      const nestedSchemaName = isArray ? `${field.name}ItemSchema` : `${field.name}Schema`;
       nestedSchemas += `const ${nestedSchemaName} = new Schema({\n`;
 
       field.objectProperties.forEach((prop) => {
@@ -129,9 +129,8 @@ function mapToMongooseType(field: FieldDefinition): string {
             return "{ type: [Date] }";
           case "objectid":
           case "id":
-            return `{ type: [Schema.Types.ObjectId], ref: '${
-              field.ref || "Document"
-            }' }`;
+            return `{ type: [Schema.Types.ObjectId], ref: '${field.ref || "Document"
+              }' }`;
           default:
             return "{ type: [String] }"; // Default to String instead of Mixed
         }
@@ -144,11 +143,8 @@ function mapToMongooseType(field: FieldDefinition): string {
     case "object":
       if (field.objectProperties?.length) {
         // Object with defined properties
-        return `{ ${field.objectProperties
-          .map((prop) => {
-            return `${prop.name}: ${mapToMongooseType(prop)}`;
-          })
-          .join(", ")} }`;
+        const nestedSchemaName = `${field.name}Schema`;
+        return nestedSchemaName;
       } else {
         return "{ type: Schema.Types.Mixed }";
       }

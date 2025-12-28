@@ -160,7 +160,49 @@ export function parseFieldDefinitions(args: string[]): {
               });
 
               console.log(
-                `Added field with ${objectProperties.length} properties`
+                `Added array:object field with ${objectProperties.length} properties`
+              );
+            } else if (type === "object" && parts.length > 2) {
+              console.log(`Processing object field: ${name}`);
+
+              const objectProperties = [];
+
+              for (let j = 2; j < parts.length; j += 2) {
+                if (j + 1 < parts.length) {
+                  let propName = parts[j];
+                  const propType = parts[j + 1];
+
+                  console.log(`  Property: ${propName}:${propType}`);
+
+                  const propIsOptional = propName.endsWith("?");
+                  const propIsRequired = propName.endsWith("!");
+
+                  if (propIsOptional) {
+                    propName = propName.slice(0, -1);
+                  }
+                  if (propIsRequired) {
+                    propName = propName.slice(0, -1);
+                  }
+
+                  objectProperties.push({
+                    name: propName,
+                    type: propType,
+                    isOptional: propIsOptional,
+                    isRequired: propIsRequired,
+                  });
+                }
+              }
+
+              fields.push({
+                name,
+                type,
+                isRequired,
+                isOptional,
+                objectProperties,
+              });
+
+              console.log(
+                `Added object field with ${objectProperties.length} properties`
               );
             } else if (type === "array" && parts.length > 2) {
               // Handle array of references (e.g., products:array:objectid:Product)

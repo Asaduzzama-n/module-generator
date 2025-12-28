@@ -139,7 +139,9 @@ function extractFieldsFromInterface(interfaceFilePath: string): FieldDefinition[
     const fields: FieldDefinition[] = [];
 
     // Extract nested interface definitions first
-    const nestedInterfaces = extractNestedInterfaces(interfaceContent);
+    const camelCaseName = toCamelCase(moduleName);
+    const mainInterfaceName = `I${camelCaseName}`;
+    const nestedInterfaces = extractNestedInterfaces(interfaceContent, mainInterfaceName);
 
     // Extract enum definitions from the interface file
     const enumDefinitions = extractEnumDefinitions(interfaceContent);
@@ -233,7 +235,7 @@ function extractEnumDefinitions(content: string): Map<string, string[]> {
 }
 
 // Extract nested interface definitions
-function extractNestedInterfaces(content: string): Map<string, FieldDefinition[]> {
+function extractNestedInterfaces(content: string, mainInterfaceName?: string): Map<string, FieldDefinition[]> {
   const nestedInterfaces = new Map<string, FieldDefinition[]>();
 
   // Find all interface definitions using a more robust approach
@@ -243,8 +245,8 @@ function extractNestedInterfaces(content: string): Map<string, FieldDefinition[]
   while ((match = interfaceRegex.exec(content)) !== null) {
     const [, interfaceName, interfaceBody] = match;
 
-    // Skip the main interface (starts with 'I' and has more than 1 character after 'I')
-    if (interfaceName.startsWith('I') && interfaceName.length > 1 && interfaceName !== 'ItemsItem') {
+    // Skip the main interface
+    if (mainInterfaceName && interfaceName === mainInterfaceName) {
       continue;
     }
 

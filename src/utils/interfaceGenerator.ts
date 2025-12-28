@@ -6,14 +6,15 @@ export function generateInterfaceContent(
 ): string {
   let interfaceContent = `import { Model, Types } from 'mongoose';\n\n`;
 
-  // Generate nested interfaces for array of objects
   fields.forEach((field) => {
-    if (
-      field.type.toLowerCase() === "array" &&
-      field.ref?.toLowerCase() === "object" &&
-      field.objectProperties?.length
-    ) {
-      const nestedInterfaceName = `${toCamelCase(field.name)}Item`;
+    const isArrayObject = field.type.toLowerCase() === "array" && field.ref?.toLowerCase() === "object";
+    const isObjectWithProps = field.type.toLowerCase() === "object" && field.objectProperties?.length;
+
+    if ((isArrayObject || isObjectWithProps) && field.objectProperties?.length) {
+      const nestedInterfaceName = isObjectWithProps
+        ? `I${toCamelCase(field.name)}`
+        : `${toCamelCase(field.name)}Item`;
+
       interfaceContent += `export interface ${nestedInterfaceName} {\n`;
 
       field.objectProperties.forEach((prop) => {
@@ -168,14 +169,8 @@ function mapToTypeScriptType(field: FieldDefinition): string {
     case "object":
       if (field.objectProperties?.length) {
         // Object with defined properties
-        return `{ ${field.objectProperties
-          .map((prop) => {
-            const optionalMarker = prop.isOptional ? "?" : "";
-            return `${prop.name}${optionalMarker}: ${mapToTypeScriptType(
-              prop
-            )}`;
-          })
-          .join("; ")} }`;
+        const nestedInterfaceName = `I${toCamelCase(field.name)}`;
+        return nestedInterfaceName;
       } else {
         return "Record<string, any>";
       }
