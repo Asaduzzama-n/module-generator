@@ -1,6 +1,6 @@
 {
   "name": "@asad_dev/leo-generator",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "description": "Enhanced Express module generator with Mongoose models, automated Postman Cloud sync, and Swagger documentation",
   "main": "dist/index.js",
   "bin": {
@@ -16,11 +16,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/unknow69/leo-generator.git"
+    "url": "git+https://github.com/Asaduzzama-n/module-generator.git"
   },
-  "homepage": "https://github.com/unknow69/leo-generator#readme",
+  "homepage": "https://github.com/Asaduzzama-n/module-generator#readme",
   "bugs": {
-    "url": "https://github.com/unknow69/leo-generator/issues"
+    "url": "https://github.com/Asaduzzama-n/module-generator/issues"
   },
   "scripts": {
     "build": "tsc && npm run copy-templates",
