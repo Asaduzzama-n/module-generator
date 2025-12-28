@@ -2,6 +2,21 @@
 
 All notable changes to Leo Generate will be documented in this file.
 
+## [1.7.0] - 2025-12-28
+
+### 🌟 New: Smart Postman Documentation
+- **Intelligent Endpoint Merging**: Manually added endpoints in Postman are now preserved during `update-docs` or new module generation.
+- **Improved Sync Logic**: The generator now merges endpoints instead of overwriting the entire module folder, ensuring manual customizations are never lost.
+- **Cloud & Local Support**: Merge logic works perfectly for both local `.postman_collection.json` files and automated Postman Cloud sync.
+
+### 🚀 New: Postman Export Feature
+- **Pull Collection Command**: Added `pull-postman` (aliases: `pull`, `export`) to fetch your entire collection from Postman Cloud and save it as a local JSON file.
+- **Backup & Portability**: Easily backup your cloud collection or export it for use in other tools with a single command.
+
+### 🛡️ Core Improvements
+- **Console Feedback**: Added detailed logging during the merge process to show which manual endpoints were preserved.
+- **Enhanced Reliability**: Improved error handling for Postman API interactions to prevent data loss.
+
 ## [1.6.0] - 2025-12-28
 
 ### 🌟 New: Asynchronous File Cleanup

@@ -1,0 +1,28 @@
+{
+  "info": {
+    "name": "User API"
+  },
+  "item": [
+    {
+      "name": "Create User",
+      "request": {
+        "method": "POST",
+        "body": {
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "Get All Users",
+      "request": {
+        "method": "GET"
+      }
+    },
+    {
+      "name": "Manual Upload Profile",
+      "request": {
+        "method": "POST"
+      }
+    }
+  ]
+}

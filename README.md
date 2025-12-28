@@ -1,4 +1,4 @@
-# Leo Generate - Enhanced Module Generator (v1.6.0)
+# Leo Generate - Enhanced Module Generator (v1.7.0)
 
 A powerful, production-ready module generator for Express.js applications with Mongoose models, automated Postman Cloud sync, and Swagger documentation.
 
@@ -70,6 +70,7 @@ leo-generate User name:string email:string age:number
 | `g <name> [fields...]` | Short alias for generate | `leo-generate g Product name:string price:number` |
 | `update-docs` | Update all documentation | `leo-generate update-docs` |
 | `docs` | Short alias for update-docs | `leo-generate docs` |
+| `pull-postman` | Fetch collection from cloud | `leo-generate pull-postman` |
 | `<name> [fields...]` | Legacy syntax | `leo-generate User name:string email:string` |
 
 ### **Common Options**
@@ -362,6 +363,19 @@ leo-generate generate User name:string \
   --routes-file src/routes.ts \
   --postman-dir collections \
   --swagger-file api-docs.json
+```
+
+### Export Full Postman Collection
+```bash
+# Fetches the entire collection from Postman Cloud and saves it locally
+leo-generate pull-postman
+
+# Aliases:
+leo-generate pull
+leo-generate export
+
+# Options:
+-o, --output <path>  # Custom output file path (default: postman/full_collection.postman_collection.json)
 ```
 
 ## 🧠 Enhanced Documentation Intelligence (v1.2.0)

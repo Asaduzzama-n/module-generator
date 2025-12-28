@@ -204,9 +204,45 @@ export function savePostmanCollection(
     }
 
     const filePath = path.join(postmanDir, `${camelCaseName.toLowerCase()}.postman_collection.json`);
-    fs.writeFileSync(filePath, JSON.stringify(collection, null, 2));
 
-    console.log(`✅ Postman collection created: ${filePath}`);
+    let finalCollection = collection;
+
+    // Check if the file already exists to merge endpoints
+    if (fs.existsSync(filePath)) {
+        try {
+            const existingContent = fs.readFileSync(filePath, "utf-8");
+            const existingCollection = JSON.parse(existingContent);
+
+            if (existingCollection.item && Array.isArray(existingCollection.item)) {
+                console.log(`🔄 Merging with existing local collection: ${filePath}`);
+
+                const existingItems = existingCollection.item;
+                const newItems = collection.item;
+
+                // Create a map of new items by name
+                const newItemsMap = new Map(newItems.map((item: any) => [item.name, item]));
+
+                // Keep manual items (those not in the generated set)
+                const manualItems = existingItems.filter((existingItem: any) => !newItemsMap.has(existingItem.name));
+
+                if (manualItems.length > 0) {
+                    console.log(`   ✨ Preserving ${manualItems.length} manual endpoints in local file: ${manualItems.map((m: any) => m.name).join(', ')}`);
+                }
+
+                // Final items = new generated items + manual items
+                finalCollection = {
+                    ...collection,
+                    item: [...newItems, ...manualItems]
+                };
+            }
+        } catch (error) {
+            console.warn(`⚠️  Could not parse existing Postman collection at ${filePath}, overwriting instead.`);
+        }
+    }
+
+    fs.writeFileSync(filePath, JSON.stringify(finalCollection, null, 2));
+
+    console.log(`✅ Postman collection ${fs.existsSync(filePath) ? 'updated' : 'created'}: ${filePath}`);
 }
 
 function generateSampleData(fields: FieldDefinition[], prefix: string = ""): any {
@@ -270,4 +306,29 @@ function generateUpdateSampleData(fields: FieldDefinition[]): any {
 
 function toCamelCase(str: string): string {
     return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/**
+ * Saves a full Postman collection to a specific file.
+ */
+export function saveFullPostmanCollection(
+    collection: any,
+    outputFilePath: string = "postman/full_collection.postman_collection.json"
+): void {
+    try {
+        const fullPath = path.isAbsolute(outputFilePath)
+            ? outputFilePath
+            : path.join(process.cwd(), outputFilePath);
+
+        const dir = path.dirname(fullPath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+
+        fs.writeFileSync(fullPath, JSON.stringify({ collection }, null, 2));
+        console.log(`✅ Full Postman collection exported to: ${fullPath}`);
+    } catch (error) {
+        console.error("❌ Error saving full Postman collection:", error instanceof Error ? error.message : String(error));
+        throw error;
+    }
 }

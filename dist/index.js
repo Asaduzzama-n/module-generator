@@ -51,6 +51,8 @@ const fieldParser_1 = require("./utils/fieldParser");
 const interfaceGenerator_1 = require("./utils/interfaceGenerator");
 const documentationUpdater_1 = require("./utils/documentationUpdater");
 const helperGenerator_1 = require("./utils/helperGenerator");
+const postmanApi_1 = require("./utils/postmanApi");
+const postmanGenerator_1 = require("./utils/postmanGenerator");
 // Import template generators
 const route_template_1 = require("./templates/route.template");
 const constants_template_1 = require("./templates/constants.template");
@@ -549,6 +551,28 @@ function main() {
                 postmanApiKey: config.postmanApiKey,
                 postmanCollectionId: config.postmanCollectionId
             }, modules);
+        }));
+        program
+            .command("pull-postman")
+            .alias("pull")
+            .alias("export")
+            .description("Fetch and save the full Postman collection from the cloud")
+            .option("-o, --output <path>", "Custom output file path", "postman/full_collection.postman_collection.json")
+            .action((options) => __awaiter(this, void 0, void 0, function* () {
+            if (!config.postmanApiKey || !config.postmanCollectionId) {
+                console.error("❌ Postman API Key and Collection ID are required in .env or package.json");
+                return;
+            }
+            try {
+                const collection = yield (0, postmanApi_1.fetchPostmanCollection)({
+                    apiKey: config.postmanApiKey,
+                    collectionId: config.postmanCollectionId
+                });
+                (0, postmanGenerator_1.saveFullPostmanCollection)(collection, options.output);
+            }
+            catch (error) {
+                console.error("❌ Error pulling Postman collection:", error instanceof Error ? error.message : String(error));
+            }
         }));
         // Legacy support - direct module generation (backward compatibility)
         program

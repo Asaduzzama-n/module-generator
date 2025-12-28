@@ -134,6 +134,12 @@ leo-generate --version
 | `--postman-dir <path>` | Custom Postman output directory | `postman` | `--postman-dir collections` |
 | `--swagger-file <path>` | Custom Swagger file path | `swagger.json` | `--swagger-file api-spec.json` |
 
+### **Pull-Postman Command Options**
+
+| Option | Description | Default | Example |
+|--------|-------------|---------|---------|
+| `-o, --output <path>` | Custom output file path | `postman/full_collection...` | `-o ./my_collection.json` |
+
 ## 🏗️ **Field Type Syntax**
 
 ### **Basic Types**
@@ -382,6 +388,9 @@ leo-generate generate User name:string --no-postman --no-swagger
 | `<name> [fields...]` | Legacy syntax | Same as generate |
 | `update-docs` | Update all module documentation | Updated Postman + Swagger |
 | `docs` | Alias for update-docs | Same as update-docs |
+| `pull-postman` | Export collection from cloud | Full collection JSON file |
+| `pull` | Alias for pull-postman | Same as pull-postman |
+| `export` | Alias for pull-postman | Same as pull-postman |
 | `--help` | Show help information | Help text |
 | `--version` | Show version information | Version number |
 

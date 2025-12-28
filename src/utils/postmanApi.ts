@@ -75,10 +75,6 @@ export async function updatePostmanCollectionViaApi(
         // 2. Prepare the new folder for this module
         // The generator creates a collection where 'item' is the list of requests
         const moduleFolderName = `${moduleName} API`;
-        const newModuleFolder = {
-            name: moduleFolderName,
-            item: newCollectionData.item
-        };
 
         // 3. Update or Add the folder in the existing collection
         if (!collection.item) {
@@ -91,10 +87,34 @@ export async function updatePostmanCollectionViaApi(
 
         if (existingFolderIndex !== -1) {
             console.log(`📝 Updating existing folder: ${moduleFolderName} in Postman collection`);
-            collection.item[existingFolderIndex] = newModuleFolder;
+
+            // Merge logic: keep existing items that aren't being updated
+            const existingFolder = collection.item[existingFolderIndex];
+            const existingItems = existingFolder.item || [];
+            const newItems = newCollectionData.item;
+
+            // Create a map of new items by name for quick lookup
+            const newItemsMap = new Map(newItems.map((item: any) => [item.name, item]));
+
+            // Updated items list:
+            // 1. All new items (will overwrite existing ones with the same name)
+            // 2. Existing items that ARE NOT in the new list (manual endpoints)
+            const manualItems = existingItems.filter((existingItem: any) => !newItemsMap.has(existingItem.name));
+
+            if (manualItems.length > 0) {
+                console.log(`   ✨ Preserving ${manualItems.length} manual endpoints: ${manualItems.map((m: any) => m.name).join(', ')}`);
+            }
+
+            collection.item[existingFolderIndex] = {
+                ...existingFolder,
+                item: [...newItems, ...manualItems]
+            };
         } else {
             console.log(`➕ Adding new folder: ${moduleFolderName} to Postman collection`);
-            collection.item.push(newModuleFolder);
+            collection.item.push({
+                name: moduleFolderName,
+                item: newCollectionData.item
+            });
         }
 
         // Debug: Log a snippet of what we are sending
@@ -119,6 +139,37 @@ export async function updatePostmanCollectionViaApi(
         console.log(`✅ Postman collection updated successfully via API!`);
     } catch (error) {
         console.error("❌ Error updating Postman collection via API:", error instanceof Error ? error.message : String(error));
+        throw error;
+    }
+}
+
+/**
+ * Fetches the complete Postman collection from the API.
+ */
+export async function fetchPostmanCollection(
+    config: PostmanApiConfig
+): Promise<any> {
+    const { apiKey, collectionId } = config;
+    const url = `https://api.getpostman.com/collections/${collectionId}`;
+
+    try {
+        console.log(`🚀 Fetching collection from Postman API: ${collectionId}...`);
+
+        const response = await fetch(url, {
+            headers: {
+                "X-Api-Key": apiKey
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Failed to fetch collection: ${JSON.stringify(errorData)}`);
+        }
+
+        const data = await response.json();
+        return data.collection;
+    } catch (error) {
+        console.error("❌ Error fetching Postman collection:", error instanceof Error ? error.message : String(error));
         throw error;
     }
 }
