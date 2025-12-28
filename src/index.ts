@@ -307,7 +307,8 @@ function generateValidationContent(
   validationContent += `export const ${camelCaseName}Validations = {\n`;
 
   // Create validation schema
-  validationContent += `  create: z.object({\n`;
+  validationContent += `  create${camelCaseName}ZodSchema: z.object({\n`;
+  validationContent += `    body: z.object({\n`;
 
   // Add validation for each field
   if (fields.length > 0) {
@@ -321,16 +322,18 @@ function generateValidationContent(
         zodType += ".optional()";
       }
 
-      validationContent += `    ${field.name}: ${zodType},\n`;
+      validationContent += `      ${field.name}: ${zodType},\n`;
     });
   } else {
-    validationContent += `    // Add validation fields\n`;
+    validationContent += `      // Add validation fields\n`;
   }
 
+  validationContent += `    }),\n`;
   validationContent += `  }),\n\n`;
 
   // Add update validation schema (similar to create but all fields optional)
-  validationContent += `  update: z.object({\n`;
+  validationContent += `  update${camelCaseName}ZodSchema: z.object({\n`;
+  validationContent += `    body: z.object({\n`;
 
   if (fields.length > 0) {
     fields.forEach((field) => {
@@ -339,12 +342,13 @@ function generateValidationContent(
       // All fields are optional in update
       zodType += ".optional()";
 
-      validationContent += `    ${field.name}: ${zodType},\n`;
+      validationContent += `      ${field.name}: ${zodType},\n`;
     });
   } else {
-    validationContent += `    // Add validation fields\n`;
+    validationContent += `      // Add validation fields\n`;
   }
 
+  validationContent += `    }),\n`;
   validationContent += `  }),\n};\n`;
 
   return validationContent;

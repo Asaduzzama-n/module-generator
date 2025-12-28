@@ -2,6 +2,13 @@
 
 All notable changes to Leo Generate will be documented in this file.
 
+## [1.7.1] - 2025-12-28
+
+### 🔧 Fixes
+- **Auth Guard Update**: Removed `SUPER_ADMIN` and `ADMIN` from default route auth guards, setting it to `GUEST` by default.
+- **Validation Naming Match**: Fixed a naming mismatch between the Zod validation schema and the routes (e.g., `createOrderZodSchema`).
+- **Zod Structure Improvement**: Wrapped Zod validation fields in a `body` object to match `validateRequest` middleware expectations.
+
 ## [1.7.0] - 2025-12-28
 
 ### 🌟 New: Smart Postman Documentation

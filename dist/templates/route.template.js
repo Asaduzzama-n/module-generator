@@ -17,8 +17,7 @@ const router = express.Router();
 router.get(
   '/',
   auth(
-    USER_ROLES.SUPER_ADMIN,
-    USER_ROLES.ADMIN
+    USER_ROLES.GUEST
   ),
   ${camelCaseName}Controller.getAll${camelCaseName}s
 );
@@ -26,8 +25,7 @@ router.get(
 router.get(
   '/:id',
   auth(
-    USER_ROLES.SUPER_ADMIN,
-    USER_ROLES.ADMIN
+    USER_ROLES.GUEST
   ),
   ${camelCaseName}Controller.getSingle${camelCaseName}
 );
@@ -35,8 +33,7 @@ router.get(
 router.post(
   '/',
   auth(
-    USER_ROLES.SUPER_ADMIN,
-    USER_ROLES.ADMIN
+    USER_ROLES.GUEST
   ),
   ${hasImageField ? `fileAndBodyProcessorUsingDiskStorage(),` : ""}
   validateRequest(${camelCaseName}Validations.create${camelCaseName}ZodSchema),
@@ -46,8 +43,7 @@ router.post(
 router.patch(
   '/:id',
   auth(
-    USER_ROLES.SUPER_ADMIN,
-    USER_ROLES.ADMIN
+    USER_ROLES.GUEST
   ),
   ${hasImageField ? `fileAndBodyProcessorUsingDiskStorage(),` : ""}
   validateRequest(${camelCaseName}Validations.update${camelCaseName}ZodSchema),
@@ -57,8 +53,7 @@ router.patch(
 router.delete(
   '/:id',
   auth(
-    USER_ROLES.SUPER_ADMIN,
-    USER_ROLES.ADMIN
+    USER_ROLES.GUEST
   ),
   ${camelCaseName}Controller.delete${camelCaseName}
 );

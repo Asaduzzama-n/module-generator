@@ -1,4 +1,4 @@
-# Leo Generate - Enhanced Module Generator (v1.7.0)
+# Leo Generate - Enhanced Module Generator (v1.7.1)
 
 A powerful, production-ready module generator for Express.js applications with Mongoose models, automated Postman Cloud sync, and Swagger documentation.
 
