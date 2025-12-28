@@ -41,7 +41,7 @@ import { paginationHelper } from '../../../helpers/paginationHelper';
 import { ${folderName}SearchableFields } from './${folderName}.constants';
 import { Types } from 'mongoose';
 ${hasImageField
-      ? `import { removeUploadedFiles } from '../../../helpers/fileHelper';`
+      ? `import removeFile from '../../../helpers/fileHelper';`
       : ""
     }
 
@@ -52,7 +52,7 @@ const create${camelCaseName} = async (
   try {
     const result = await ${camelCaseName}.create(payload);
     if (!result) {
-      ${hasImageField ? `removeUploadedFiles(payload.images || payload.media);` : ""}
+      ${hasImageField ? `await removeFile(payload.images || payload.media);` : ""}
       throw new ApiError(
         StatusCodes.BAD_REQUEST,
         'Failed to create ${camelCaseName}, please try again with valid data.'
@@ -61,7 +61,7 @@ const create${camelCaseName} = async (
 
     return result;
   } catch (error: any) {
-    ${hasImageField ? `if (payload.images || payload.media) removeUploadedFiles(payload.images || payload.media);` : ""}
+    ${hasImageField ? `if (payload.images || payload.media) await removeFile(payload.images || payload.media);` : ""}
     if (error.code === 11000) {
       throw new ApiError(StatusCodes.CONFLICT, 'Duplicate entry found');
     }
@@ -181,7 +181,7 @@ const delete${camelCaseName} = async (id: string): Promise<I${camelCaseName}> =>
   ${hasImageField
       ? `// Remove associated files
   if (result.image || result.images || result.media) {
-    removeUploadedFiles(result.image || result.images || result.media);
+    await removeFile(result.image || result.images || result.media);
   }`
       : ""}
 

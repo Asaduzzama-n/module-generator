@@ -2392,6 +2392,440 @@
           }
         }
       }
+    },
+    "/imagemodule": {
+      "post": {
+        "tags": [
+          "Imagemodule"
+        ],
+        "summary": "Create a new Imagemodule",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImagemoduleCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Imagemodule created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Imagemodule"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Imagemodule"
+        ],
+        "summary": "Get all Imagemodules",
+        "responses": {
+          "200": {
+            "description": "List of Imagemodules retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Imagemodule"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/imagemodule/{id}": {
+      "get": {
+        "tags": [
+          "Imagemodule"
+        ],
+        "summary": "Get Imagemodule by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Imagemodule ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Imagemodule retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Imagemodule"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Imagemodule not found"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Imagemodule"
+        ],
+        "summary": "Update Imagemodule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Imagemodule ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImagemoduleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Imagemodule updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Imagemodule"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Imagemodule not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Imagemodule"
+        ],
+        "summary": "Delete Imagemodule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Imagemodule ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Imagemodule deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Imagemodule"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Imagemodule not found"
+          }
+        }
+      }
+    },
+    "/skiptest": {
+      "post": {
+        "tags": [
+          "Skiptest"
+        ],
+        "summary": "Create a new Skiptest",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkiptestCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Skiptest created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Skiptest"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Skiptest"
+        ],
+        "summary": "Get all Skiptests",
+        "responses": {
+          "200": {
+            "description": "List of Skiptests retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Skiptest"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/skiptest/{id}": {
+      "get": {
+        "tags": [
+          "Skiptest"
+        ],
+        "summary": "Get Skiptest by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Skiptest ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Skiptest retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Skiptest"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Skiptest not found"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Skiptest"
+        ],
+        "summary": "Update Skiptest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Skiptest ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkiptestUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Skiptest updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Skiptest"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Skiptest not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Skiptest"
+        ],
+        "summary": "Delete Skiptest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Skiptest ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Skiptest deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Skiptest"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Skiptest not found"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3541,17 +3975,13 @@
             "type": "string",
             "description": "MongoDB ObjectId"
           },
-          "title": {
+          "name": {
             "type": "string",
-            "description": "title field"
+            "description": "name field"
           },
-          "status": {
+          "email": {
             "type": "string",
-            "enum": [
-              "draft",
-              "published"
-            ],
-            "description": "status field"
+            "description": "email field"
           },
           "createdAt": {
             "type": "string",
@@ -3571,17 +4001,13 @@
       "TestmoduleCreate": {
         "type": "object",
         "properties": {
-          "title": {
+          "name": {
             "type": "string",
-            "description": "title field"
+            "description": "name field"
           },
-          "status": {
+          "email": {
             "type": "string",
-            "enum": [
-              "draft",
-              "published"
-            ],
-            "description": "status field"
+            "description": "email field"
           }
         },
         "required": []
@@ -3589,17 +4015,13 @@
       "TestmoduleUpdate": {
         "type": "object",
         "properties": {
-          "title": {
+          "name": {
             "type": "string",
-            "description": "title field"
+            "description": "name field"
           },
-          "status": {
+          "email": {
             "type": "string",
-            "enum": [
-              "draft",
-              "published"
-            ],
-            "description": "status field"
+            "description": "email field"
           }
         }
       },
@@ -3883,6 +4305,96 @@
               "ola"
             ],
             "description": "type field"
+          }
+        }
+      },
+      "Imagemodule": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "MongoDB ObjectId"
+          },
+          "image": {
+            "type": "string",
+            "description": "image field"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": [
+          "_id"
+        ]
+      },
+      "ImagemoduleCreate": {
+        "type": "object",
+        "properties": {
+          "image": {
+            "type": "string",
+            "description": "image field"
+          }
+        },
+        "required": []
+      },
+      "ImagemoduleUpdate": {
+        "type": "object",
+        "properties": {
+          "image": {
+            "type": "string",
+            "description": "image field"
+          }
+        }
+      },
+      "Skiptest": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "MongoDB ObjectId"
+          },
+          "name": {
+            "type": "string",
+            "description": "name field"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": [
+          "_id"
+        ]
+      },
+      "SkiptestCreate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name field"
+          }
+        },
+        "required": []
+      },
+      "SkiptestUpdate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name field"
           }
         }
       }
