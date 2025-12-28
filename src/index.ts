@@ -610,17 +610,17 @@ function main() {
         }, hasFile);
       });
 
-    // Documentation update command
     program
       .command("update-docs")
       .alias("docs")
       .description("Update Postman and Swagger documentation for existing modules")
+      .argument("[modules...]", "Specific modules to update (optional)")
       .option("--modules-dir <path>", "Path to modules directory", "src/app/modules")
       .option("--no-postman", "Skip Postman collection generation")
       .option("--no-swagger", "Skip Swagger documentation generation")
       .option("--postman-dir <path>", "Custom Postman output directory", "postman")
       .option("--swagger-file <path>", "Custom Swagger file path", "swagger.json")
-      .action(async (options: any) => {
+      .action(async (modules: string[], options: any) => {
         await updateExistingModulesDocumentation(options.modulesDir, {
           updatePostman: options.postman !== false,
           updateSwagger: options.swagger !== false,
@@ -628,7 +628,7 @@ function main() {
           swaggerFile: options.swaggerFile,
           postmanApiKey: config.postmanApiKey,
           postmanCollectionId: config.postmanCollectionId
-        });
+        }, modules);
       });
 
     // Legacy support - direct module generation (backward compatibility)

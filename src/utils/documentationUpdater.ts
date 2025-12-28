@@ -62,7 +62,8 @@ export async function updateAllDocumentation(
 
 export async function updateExistingModulesDocumentation(
   modulesDir: string = "src/app/modules",
-  options: DocumentationOptions = {}
+  options: DocumentationOptions = {},
+  targetModules: string[] = []
 ): Promise<void> {
   const fullModulesPath = path.join(process.cwd(), modulesDir);
 
@@ -73,9 +74,20 @@ export async function updateExistingModulesDocumentation(
 
   console.log("🔄 Scanning existing modules for documentation updates...");
 
-  const moduleDirectories = fs.readdirSync(fullModulesPath, { withFileTypes: true })
+  let moduleDirectories = fs.readdirSync(fullModulesPath, { withFileTypes: true })
     .filter(dirent => dirent.isDirectory())
     .map(dirent => dirent.name);
+
+  // Filter if target modules are specified
+  if (targetModules && targetModules.length > 0) {
+    const targets = targetModules.map(m => m.toLowerCase());
+    moduleDirectories = moduleDirectories.filter(dir => targets.includes(dir.toLowerCase()));
+
+    if (moduleDirectories.length === 0) {
+      console.warn(`⚠️  None of the specified modules were found: ${targetModules.join(', ')}`);
+      return;
+    }
+  }
 
   let updatedCount = 0;
 

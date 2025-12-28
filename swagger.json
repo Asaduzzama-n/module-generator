@@ -222,6 +222,440 @@
           }
         }
       }
+    },
+    "/testone": {
+      "post": {
+        "tags": [
+          "Testone"
+        ],
+        "summary": "Create a new Testone",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestoneCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Testone created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testone"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Testone"
+        ],
+        "summary": "Get all Testones",
+        "responses": {
+          "200": {
+            "description": "List of Testones retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Testone"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/testone/{id}": {
+      "get": {
+        "tags": [
+          "Testone"
+        ],
+        "summary": "Get Testone by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Testone ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Testone retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testone"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Testone not found"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Testone"
+        ],
+        "summary": "Update Testone",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Testone ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestoneUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Testone updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testone"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Testone not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Testone"
+        ],
+        "summary": "Delete Testone",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Testone ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Testone deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testone"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Testone not found"
+          }
+        }
+      }
+    },
+    "/testtwo": {
+      "post": {
+        "tags": [
+          "Testtwo"
+        ],
+        "summary": "Create a new Testtwo",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TesttwoCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Testtwo created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testtwo"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Testtwo"
+        ],
+        "summary": "Get all Testtwos",
+        "responses": {
+          "200": {
+            "description": "List of Testtwos retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Testtwo"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/testtwo/{id}": {
+      "get": {
+        "tags": [
+          "Testtwo"
+        ],
+        "summary": "Get Testtwo by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Testtwo ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Testtwo retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testtwo"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Testtwo not found"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Testtwo"
+        ],
+        "summary": "Update Testtwo",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Testtwo ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TesttwoUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Testtwo updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testtwo"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Testtwo not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Testtwo"
+        ],
+        "summary": "Delete Testtwo",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Testtwo ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Testtwo deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Testtwo"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Testtwo not found"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -445,6 +879,99 @@
           "totalAmount": {
             "type": "number",
             "description": "totalAmount field"
+          }
+        }
+      },
+      "Testone": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "MongoDB ObjectId"
+          },
+          "name": {
+            "type": "string",
+            "description": "name field"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": [
+          "_id",
+          "name"
+        ]
+      },
+      "TestoneCreate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name field"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "TestoneUpdate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name field"
+          }
+        }
+      },
+      "Testtwo": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "MongoDB ObjectId"
+          },
+          "name": {
+            "type": "string",
+            "description": "name field"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": [
+          "_id"
+        ]
+      },
+      "TesttwoCreate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name field"
+          }
+        },
+        "required": []
+      },
+      "TesttwoUpdate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name field"
           }
         }
       }
