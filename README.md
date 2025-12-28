@@ -1,6 +1,7 @@
-# Leo Generate - Enhanced Module Generator
+# Leo Generate - Enhanced Module Generator (v1.6.0)
 
-A powerful and comprehensive module generator for Express.js applications with Mongoose models, automatic Postman collections, and Swagger documentation.
+A powerful, production-ready module generator for Express.js applications with Mongoose models, automated Postman Cloud sync, and Swagger documentation.
+
 
 ## 🚀 Features
 
@@ -30,15 +31,14 @@ A powerful and comprehensive module generator for Express.js applications with M
 - 📖 **Swagger Documentation** - Auto-generate OpenAPI 3.0 specs
 - 🔄 **Intelligent Documentation Updates** - Analyzes your code changes and updates docs accordingly
 - 🧠 **Code-Aware Parsing** - Reads both interface and model files for accurate field extraction
-- 📂 **Organized Output** - Separate folders for different documentation types
-- 📂 **Organized Output** - Separate folders for different documentation types
+- 📂 **Organized Output** - Separate folders for documentation types
 - ⚡ **Dynamic Values** - Pre-request scripts auto-generate random values for testing
 - ✅ **100% Syntax Support** - Handles ALL field types the generator can create
 
 ## 📦 Installation
 
 ```bash
-npm install leo-generate --global
+npm install @asad_dev/leo-generator --global
 ```
 
 Or use with npx:
@@ -101,7 +101,7 @@ swagger.json  // Updated with new endpoints
 
 ### Generate Module
 ```bash
-leo-generate generate <ModuleName> [fields...]
+leo-generate generate <ModuleName> [fields...] [options]
 
 # Options:
 --no-postman          # Skip Postman collection generation
@@ -109,9 +109,9 @@ leo-generate generate <ModuleName> [fields...]
 --postman-dir <path>  # Custom Postman output directory
 --swagger-file <path> # Custom Swagger file path
 --modules-dir <path>  # Custom modules directory
---modules-dir <path>  # Custom modules directory
 --routes-file <path>  # Custom routes file
---file:true           # Enable file upload support (generates cleanup helpers)
+--file:true           # Enable file upload support (generates async cleanup helpers)
+--skip <files...>     # Skip specific file types (e.g., interface model constants)
 ```
 
 ### Smart Documentation Updates
@@ -285,7 +285,31 @@ Query Parameters for GET /api/v1/products:
 }
 ```
 
-## 📖 Swagger Integration
+## ☁️ Automated Postman Cloud Sync
+
+Leo Generate can automatically sync your generated collections to the Postman Cloud.
+
+### Configuration
+Update your `.env` file or `package.json` with your Postman credentials:
+
+```env
+POSTMAN_API_KEY=your_api_key
+POSTMAN_COLLECTION_ID=your_collection_uid
+```
+
+### How it Works
+1. When you run `generate` or `update-docs`, the system checks for credentials.
+2. It fetches your existing collection from Postman Cloud.
+3. It intelligently merges the new/updated module folder into the collection.
+4. It updates the cloud collection via the Postman API.
+
+## 🗑️ Intelligent File Cleanup
+
+When generating a module with `--file:true`, the system adds asynchronous cleanup logic:
+
+- **Service Layer**: Automatically `await`s file removal on record deletion or creation failure.
+- **Helper Utility**: Generates a robust `removeFile` helper using `fs/promises`.
+- **Path Logic**: Automatically handles `/images/` prefix and path normalization.
 
 ### Auto-Generated Documentation
 - 📋 OpenAPI 3.0 specification

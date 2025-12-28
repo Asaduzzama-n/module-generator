@@ -1,6 +1,6 @@
 {
-  "name": "@unknow69/leo-generator",
-  "version": "1.5.0",
+  "name": "@asad_dev/leo-generator",
+  "version": "1.6.0",
   "description": "Enhanced Express module generator with Mongoose models, automated Postman Cloud sync, and Swagger documentation",
   "main": "dist/index.js",
   "bin": {

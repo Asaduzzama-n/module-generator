@@ -1,8 +1,8 @@
 # 📚 Leo Generate - Complete Command Reference
 
 ## 🚀 **Package Information**
-- **Package Name**: `@unknow69/leo-generator`
-- **Version**: `1.1.0`
+- **Package Name**: `@asad_dev/leo-generator`
+- **Version**: `1.6.0`
 - **Binary**: `leo-generate`
 
 ## 📋 **All Available Commands**
@@ -121,6 +121,8 @@ leo-generate --version
 | `--no-swagger` | Skip Swagger documentation generation | false | `--no-swagger` |
 | `--postman-dir <path>` | Custom Postman output directory | `postman` | `--postman-dir collections` |
 | `--swagger-file <path>` | Custom Swagger file path | `swagger.json` | `--swagger-file api-docs.json` |
+| `--file:true` | Enable file upload support (async cleanup) | false | `--file:true` |
+| `--skip <files...>` | Skip specific file types | - | `--skip interface model constants` |
 
 ### **Update-Docs Command Options**
 
@@ -387,7 +389,7 @@ leo-generate generate User name:string --no-postman --no-swagger
 
 ```bash
 # Install globally
-npm install -g @unknow69/leo-generator
+npm install -g @asad_dev/leo-generator
 
 # Generate your first module
 leo-generate generate User name:string email:string age:number

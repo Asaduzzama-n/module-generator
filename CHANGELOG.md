@@ -2,6 +2,23 @@
 
 All notable changes to Leo Generate will be documented in this file.
 
+## [1.6.0] - 2025-12-28
+
+### 🌟 New: Asynchronous File Cleanup
+- **Enhanced `removeFile` Helper**: Replaced synchronous cleanup logic with a robust asynchronous implementation using `fs/promises`.
+- **Intelligent Path Normalization**: Automatically strips `/images/` prefixes and handles absolute/relative paths correctly.
+- **Improved Reliability**: Added specific error handling for missing files (`ENOENT`) to prevent process crashes.
+
+### 🛡️ Core Improvements
+- **Async Service Templates**: Updated generated service templates to `await` file removal operations, ensuring data consistency.
+- **Environment Detection**: Improved `.env` loading to prioritize Postman API keys and Collection IDs for automated syncing.
+- **Enhanced `--skip` Logic**: Refined file skipping mechanism to allow bypassing any file type (interface, model, constants, etc.) during generation.
+
+### 🔧 Fixes
+- **Module Dependency Fix**: Resolved `MODULE_NOT_FOUND` errors by ensuring proper dependency installation and build synchronization.
+
+---
+
 ## [1.5.0] - 2025-12-20
 
 ### 🚀 Major Feature: Automated Postman Cloud Sync
