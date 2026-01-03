@@ -92,6 +92,10 @@ leo-generate update-docs \
   --modules-dir src/modules \
   --postman-dir api-collections \
   --swagger-file docs/api-spec.json
+
+# Update specific modules only
+leo-generate update-docs User Product
+leo-generate docs User Order --no-swagger
 ```
 
 ### **3. Help and Version Commands**
@@ -133,6 +137,12 @@ leo-generate --version
 | `--no-swagger` | Skip Swagger documentation generation | false | `--no-swagger` |
 | `--postman-dir <path>` | Custom Postman output directory | `postman` | `--postman-dir collections` |
 | `--swagger-file <path>` | Custom Swagger file path | `swagger.json` | `--swagger-file api-spec.json` |
+
+### **Specific Module Updates**
+You can optionally provide module names to update documentation for specific modules only:
+```bash
+leo-generate update-docs User Product Order
+```
 
 ### **Pull-Postman Command Options**
 

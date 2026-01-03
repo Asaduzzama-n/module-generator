@@ -138,6 +138,16 @@ leo-generate docs
 --no-swagger          # Skip Swagger updates
 --postman-dir <path>  # Custom Postman output directory
 --swagger-file <path> # Custom Swagger file path
+
+### Targeted Updates
+You can also update documentation for specific modules only:
+```bash
+# Only update User and Product modules
+leo-generate update-docs User Product
+
+# Update Order module without Swagger
+leo-generate update-docs Order --no-swagger
+```
 ```
 
 ## 🏗️ Advanced Examples
